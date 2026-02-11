@@ -64,15 +64,16 @@ class UnsplashExampleWorker(
         val providerClient = ProviderContract.getProviderClient(
                 applicationContext, UNSPLASH_AUTHORITY)
         val attributionString = applicationContext.getString(R.string.attribution)
-        providerClient.addArtwork(photos.map { photo ->
+        providerClient.addArtwork(photos.filter { photo ->
+            photo.url_k != null
+        }.map { photo ->
             Artwork(
                     token = photo.id,
-                    title = photo.description ?: attributionString,
-                    byline = photo.user.name,
-                    attribution = if (photo.description != null) attributionString else null,
-                    persistentUri = photo.urls.full.toUri(),
-                    webUri = photo.links.webUri,
-                    metadata = photo.user.links.webUri.toString())
+                    title = photo.title ?: attributionString,
+                    byline = photo.owner,
+                    attribution = if (photo.title != null) attributionString else null,
+                    persistentUri = photo.url_k?.toUri(),
+                    webUri = "https://www.flickr.com/photos/${photo.owner}/${photo.id}".toUri())
         })
         return Result.success()
     }

@@ -16,35 +16,57 @@
 
 package com.example.muzei.unsplash
 
-import androidx.core.net.toUri
 import okhttp3.OkHttpClient
 import retrofit2.Call
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 import retrofit2.create
 import retrofit2.http.GET
-import retrofit2.http.Path
+import retrofit2.http.Query
 import java.io.IOException
+import se.akerfeldt.okhttp.signpost.OkHttpOAuthConsumer
+import se.akerfeldt.okhttp.signpost.SigningInterceptor
 
 internal interface UnsplashService {
 
     companion object {
+        // OAuth credentials
+        private const val OAUTH_TOKEN = "72157720962156342-cc7f723e08b19c2b"
+        private const val OAUTH_TOKEN_SECRET = "9d3aaf1845854918"
+        private const val CONSUMER_SECRET = "27967225db7fce22"
 
         private fun createService() : UnsplashService {
             val okHttpClient = OkHttpClient.Builder()
                     .addInterceptor { chain ->
                         var request = chain.request()
                         val url = request.url().newBuilder()
-                                .addQueryParameter("client_id", CONSUMER_KEY).build()
+                                .addQueryParameter("api_key", CONSUMER_KEY).build()
                         request = request.newBuilder().url(url).build()
                         chain.proceed(request)
                     }
                     .build()
 
             val retrofit = Retrofit.Builder()
-                    .baseUrl("https://api.unsplash.com/")
+                    .baseUrl("https://www.flickr.com/services/rest/")
                     .client(okHttpClient)
-                    .addConverterFactory(MoshiConverterFactory.create())
+                    .addConverterFactory(MoshiConverterFactory.create().asLenient())
+                    .build()
+
+            return retrofit.create()
+        }
+
+        private fun createOAuthService() : UnsplashService {
+            val consumer = OkHttpOAuthConsumer(CONSUMER_KEY, CONSUMER_SECRET)
+            consumer.setTokenWithSecret(OAUTH_TOKEN, OAUTH_TOKEN_SECRET)
+
+            val okHttpClient = OkHttpClient.Builder()
+                    .addInterceptor(SigningInterceptor(consumer))
+                    .build()
+
+            val retrofit = Retrofit.Builder()
+                    .baseUrl("https://www.flickr.com/services/rest/")
+                    .client(okHttpClient)
+                    .addConverterFactory(MoshiConverterFactory.create().asLenient())
                     .build()
 
             return retrofit.create()
@@ -52,36 +74,64 @@ internal interface UnsplashService {
 
         @Throws(IOException::class)
         internal fun popularPhotos(): List<Photo> {
-            return createService().popularPhotos.execute().body()
-                    ?: throw IOException("Response was null")
-        }
+            // Randomly pick from 3 sources
+            val source = (0..2).random()
+            val page = (1..500).random()
 
-        @Throws(IOException::class)
-        internal fun trackDownload(photoId: String) {
-            createService().trackDownload(photoId).execute()
+            val service = createService()
+            val oauthService = createOAuthService()
+
+            return when(source.toInt()) {
+                0 -> {
+                    // Source 1: My favorites
+                    service.myFavorites(page).execute()
+                }
+                1 -> {
+                    // Source 2: Random user from following list
+                    val contacts = oauthService.getContacts().execute().body()?.contacts?.contact
+                        ?: throw IOException("Failed to fetch contacts")
+                    if (contacts.isEmpty()) {
+                        throw IOException("No contacts found")
+                    }
+                    val randomUser = contacts.random().nsid
+                    service.userPublicPhotos(randomUser, page).execute()
+                }
+                2 -> {
+                    // Source 3: Today's interestingness/explore
+                    service.interestingness(page).execute()
+                }
+                else -> service.myFavorites(page).execute()
+            }.body()?.photos?.photo ?: throw IOException("Response was null")
         }
     }
 
-    @get:GET("photos?order_by=popular&per_page=30")
-    val popularPhotos: Call<List<Photo>>
+    @GET("?method=flickr.favorites.getPublicList&user_id=67764677%40N07&format=json&nojsoncallback=1&extras=url_k&per_page=20")
+    fun myFavorites(@Query("page") page: Int): Call<Resp>
 
-    @GET("photos/{id}/download")
-    fun trackDownload(@Path("id") photoId: String) : Call<Any>
+    @GET("?method=flickr.people.getPublicPhotos&format=json&nojsoncallback=1&extras=url_k&per_page=20")
+    fun userPublicPhotos(@Query("user_id") userId: String, @Query("page") page: Int): Call<Resp>
 
+    @GET("?method=flickr.interestingness.getList&format=json&nojsoncallback=1&extras=url_k&per_page=20")
+    fun interestingness(@Query("page") page: Int): Call<Resp>
+
+    @GET("?method=flickr.contacts.getList&format=json&nojsoncallback=1&per_page=1000")
+    fun getContacts(): Call<ContactsResp>
+
+    data class Resp(
+        val photos: Photos)
+    data class Photos(
+        val photo: List<Photo>)
     data class Photo(
             val id: String,
-            val urls: Urls,
-            val description: String?,
-            val user: User,
-            val links: Links)
+            val owner: String,
+            val url_k: String?,
+            val title: String?)
 
-    data class Urls(val full: String)
-
-    data class Links(val html: String) {
-        val webUri get() = "$html$ATTRIBUTION_QUERY_PARAMETERS".toUri()
-    }
-
-    data class User(
-            val name: String,
-            val links: Links)
+    data class ContactsResp(
+        val contacts: Contacts)
+    data class Contacts(
+        val contact: List<Contact>)
+    data class Contact(
+            val nsid: String,
+            val username: String?)
 }
