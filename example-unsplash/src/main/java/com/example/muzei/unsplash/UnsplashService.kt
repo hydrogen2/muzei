@@ -74,8 +74,8 @@ internal interface UnsplashService {
 
         @Throws(IOException::class)
         internal fun popularPhotos(): List<Photo> {
-            // Randomly pick from 3 sources
-            val source = (0..2).random()
+            // Randomly pick from 4 sources
+            val source = (0..3).random()
             val page = (1..500).random()
 
             val service = createService()
@@ -100,22 +100,35 @@ internal interface UnsplashService {
                     // Source 3: Today's interestingness/explore
                     service.interestingness(page).execute()
                 }
+                3 -> {
+                    // Source 4: Random user from family contacts
+                    val familyContacts = oauthService.getFamilyContacts().execute().body()?.contacts?.contact
+                        ?: throw IOException("Failed to fetch family contacts")
+                    if (familyContacts.isEmpty()) {
+                        throw IOException("No family contacts found")
+                    }
+                    val randomUser = familyContacts.random().nsid
+                    service.userPublicPhotos(randomUser, page).execute()
+                }
                 else -> service.myFavorites(page).execute()
             }.body()?.photos?.photo ?: throw IOException("Response was null")
         }
     }
 
-    @GET("?method=flickr.favorites.getPublicList&user_id=67764677%40N07&format=json&nojsoncallback=1&extras=url_k&per_page=20")
+    @GET("?method=flickr.favorites.getPublicList&user_id=67764677%40N07&format=json&nojsoncallback=1&extras=url_k,url_h,url_l,url_o&per_page=20")
     fun myFavorites(@Query("page") page: Int): Call<Resp>
 
-    @GET("?method=flickr.people.getPublicPhotos&format=json&nojsoncallback=1&extras=url_k&per_page=20")
+    @GET("?method=flickr.people.getPublicPhotos&format=json&nojsoncallback=1&extras=url_k,url_h,url_l,url_o&per_page=20")
     fun userPublicPhotos(@Query("user_id") userId: String, @Query("page") page: Int): Call<Resp>
 
-    @GET("?method=flickr.interestingness.getList&format=json&nojsoncallback=1&extras=url_k&per_page=20")
+    @GET("?method=flickr.interestingness.getList&format=json&nojsoncallback=1&extras=url_k,url_h,url_l,url_o&per_page=20")
     fun interestingness(@Query("page") page: Int): Call<Resp>
 
     @GET("?method=flickr.contacts.getList&format=json&nojsoncallback=1&per_page=1000")
     fun getContacts(): Call<ContactsResp>
+
+    @GET("?method=flickr.contacts.getList&format=json&nojsoncallback=1&filter=family&per_page=1000")
+    fun getFamilyContacts(): Call<ContactsResp>
 
     data class Resp(
         val photos: Photos)
@@ -125,7 +138,12 @@ internal interface UnsplashService {
             val id: String,
             val owner: String,
             val url_k: String?,
-            val title: String?)
+            val url_h: String?,
+            val url_l: String?,
+            val url_o: String?,
+            val title: String?) {
+        fun getBestUrl(): String? = url_k ?: url_h ?: url_l ?: url_o
+    }
 
     data class ContactsResp(
         val contacts: Contacts)

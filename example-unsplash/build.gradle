@@ -27,6 +27,8 @@ dependencies {
     implementation 'se.akerfeldt:okhttp-signpost:1.1.0'
     //implementation "com.google.android.apps.muzei:muzei-api:+"
     implementation project(':muzei-api')
+
+    testImplementation 'junit:junit:4.13.2'
 }
 
 android {
