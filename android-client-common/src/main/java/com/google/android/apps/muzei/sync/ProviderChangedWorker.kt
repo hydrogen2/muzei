@@ -202,7 +202,9 @@ class ProviderChangedWorker(
                     val loadFrequencySeconds = providerManager.loadFrequencySeconds
                     var enqueued = false
                     if (tag == "changed" || tag == PERSISTENT_CHANGED_TAG) {
-                        val overDue = loadFrequencySeconds > 0 &&
+                        // Fast advance intervals are driven by ProviderManager's own timer,
+                        // so only treat periodic work driven intervals as potentially overdue
+                        val overDue = loadFrequencySeconds >= ProviderManager.MIN_PERIODIC_LOAD_FREQUENCY_SECONDS &&
                                 System.currentTimeMillis() - lastLoadedTime >= TimeUnit.SECONDS.toMillis(loadFrequencySeconds)
                         val enqueueNext = overDue || !isCurrentArtworkValid(client, provider)
                         if (enqueueNext) {
@@ -213,7 +215,7 @@ class ProviderChangedWorker(
                             ArtworkLoadWorker.enqueueNext(applicationContext)
                             enqueued = true
                         }
-                    } else if (loadFrequencySeconds > 0) {
+                    } else if (loadFrequencySeconds >= ProviderManager.MIN_PERIODIC_LOAD_FREQUENCY_SECONDS) {
                         // Schedule the periodic work
                         if (BuildConfig.DEBUG) {
                             Log.d(TAG, "Scheduling periodic load")

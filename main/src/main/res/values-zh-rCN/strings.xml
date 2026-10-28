@@ -40,6 +40,7 @@
     <string name="auto_advance_ordering_new_in_order">新图片按顺序，其余随机</string>
     <string name="auto_advance_ordering_random">总是随机</string>
     <string name="auto_advance_interval">时间间隔</string>
+    <string name="auto_advance_interval_5s">每 5 秒</string>
     <string name="auto_advance_interval_15m">每 15 分钟</string>
     <string name="auto_advance_interval_30m">每 30 分钟</string>
     <string name="auto_advance_interval_1h">每 1 小时</string>

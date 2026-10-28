@@ -45,10 +45,12 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import net.nurik.roman.muzei.androidclientcommon.BuildConfig
 import java.util.concurrent.Executors
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Single threaded coroutine context used for all sync operations
@@ -78,6 +80,12 @@ class ProviderManager private constructor(private val context: Context)
         private const val TAG = "ProviderManager"
         private const val PREF_LOAD_FREQUENCY_SECONDS = "loadFrequencySeconds"
         private const val DEFAULT_LOAD_FREQUENCY_SECONDS = 3600L
+        /**
+         * WorkManager silently clamps periodic work to a 15 minute minimum. Any
+         * load frequency below this is driven by an in-process timer
+         * (see [startFastAdvance]) rather than periodic work.
+         */
+        const val MIN_PERIODIC_LOAD_FREQUENCY_SECONDS = 15 * 60L
         private const val PREF_LOAD_ON_WIFI = "loadOnWifi"
         private const val DEFAULT_LOAD_ON_WIFI = false
         private const val PREF_LOAD_ORDERING = "loadOrdering"
@@ -179,16 +187,49 @@ class ProviderManager private constructor(private val context: Context)
         }
     }
 
+    private var fastAdvanceJob: Job? = null
+
+    @OptIn(DelicateCoroutinesApi::class)
+    private fun startFastAdvance() {
+        fastAdvanceJob?.cancel()
+        fastAdvanceJob = null
+        val frequencySeconds = loadFrequencySeconds
+        if (!hasActiveObservers() ||
+            frequencySeconds !in 1 until MIN_PERIODIC_LOAD_FREQUENCY_SECONDS) {
+            return
+        }
+        if (BuildConfig.DEBUG) {
+            Log.d(TAG, "Starting fast advance every $frequencySeconds seconds")
+        }
+        fastAdvanceJob = GlobalScope.launch {
+            while (isActive) {
+                delay(frequencySeconds.seconds)
+                nextArtwork()
+            }
+        }
+    }
+
+    private fun stopFastAdvance() {
+        fastAdvanceJob?.cancel()
+        fastAdvanceJob = null
+    }
+
+    private fun scheduleLoads() {
+        val frequencySeconds = loadFrequencySeconds
+        if (frequencySeconds >= MIN_PERIODIC_LOAD_FREQUENCY_SECONDS) {
+            ArtworkLoadWorker.enqueuePeriodic(context, frequencySeconds, loadOnWifi)
+        } else {
+            ArtworkLoadWorker.cancelPeriodic(context)
+        }
+        startFastAdvance()
+    }
+
     var loadFrequencySeconds: Long
         set(newLoadFrequency) {
             PreferenceManager.getDefaultSharedPreferences(context).edit {
                 putLong(PREF_LOAD_FREQUENCY_SECONDS, newLoadFrequency)
             }
-            if (newLoadFrequency > 0) {
-                ArtworkLoadWorker.enqueuePeriodic(context, newLoadFrequency, loadOnWifi)
-            } else {
-                ArtworkLoadWorker.cancelPeriodic(context)
-            }
+            scheduleLoads()
         }
         get() = PreferenceManager.getDefaultSharedPreferences(context)
                 .getLong(PREF_LOAD_FREQUENCY_SECONDS, DEFAULT_LOAD_FREQUENCY_SECONDS)
@@ -198,7 +239,7 @@ class ProviderManager private constructor(private val context: Context)
             PreferenceManager.getDefaultSharedPreferences(context).edit {
                 putBoolean(PREF_LOAD_ON_WIFI, newLoadOnWifi)
             }
-            if (loadFrequencySeconds > 0) {
+            if (loadFrequencySeconds >= MIN_PERIODIC_LOAD_FREQUENCY_SECONDS) {
                 ArtworkLoadWorker.enqueuePeriodic(context, loadFrequencySeconds, newLoadOnWifi)
             }
         }
@@ -239,6 +280,7 @@ class ProviderManager private constructor(private val context: Context)
         providerLiveData.observeForever(this)
         artworkLiveData.observeForever(artworkObserver)
         startArtworkLoad()
+        startFastAdvance()
     }
 
     @OptIn(DelicateCoroutinesApi::class)
@@ -290,6 +332,7 @@ class ProviderManager private constructor(private val context: Context)
     }
 
     override fun onInactive() {
+        stopFastAdvance()
         nextArtworkJob?.cancel()
         artworkLiveData.removeObserver(artworkObserver)
         providerLiveData.removeObserver(this)

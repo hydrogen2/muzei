@@ -43,6 +43,7 @@
     <string name="auto_advance_ordering_new_in_order">New images in order, then random</string>
     <string name="auto_advance_ordering_random">Always random</string>
     <string name="auto_advance_interval">Interval</string>
+    <string name="auto_advance_interval_5s">Every 5 seconds</string>
     <string name="auto_advance_interval_15m">Every 15 minutes</string>
     <string name="auto_advance_interval_30m">Every 30 minutes</string>
     <string name="auto_advance_interval_1h">Every hour</string>

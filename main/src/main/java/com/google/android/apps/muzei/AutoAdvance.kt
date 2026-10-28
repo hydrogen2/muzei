@@ -140,6 +140,7 @@ fun AutoAdvance(
 
     // Interval
     val intervalOptions = listOf(
+        stringResource(R.string.auto_advance_interval_5s),
         stringResource(R.string.auto_advance_interval_15m),
         stringResource(R.string.auto_advance_interval_30m),
         stringResource(R.string.auto_advance_interval_1h),
@@ -151,25 +152,27 @@ fun AutoAdvance(
     )
     val intervalToStringMapper: (interval: Long) -> String = { interval ->
         when (interval) {
-            60L * 15 -> intervalOptions[0]
-            60L * 30 -> intervalOptions[1]
-            60L * 60 -> intervalOptions[2]
-            60L * 60 * 3 -> intervalOptions[3]
-            60L * 60 * 6 -> intervalOptions[4]
-            60L * 60 * 24 -> intervalOptions[5]
-            60L * 60 * 72 -> intervalOptions[6]
-            else -> intervalOptions[7]
+            5L -> intervalOptions[0]
+            60L * 15 -> intervalOptions[1]
+            60L * 30 -> intervalOptions[2]
+            60L * 60 -> intervalOptions[3]
+            60L * 60 * 3 -> intervalOptions[4]
+            60L * 60 * 6 -> intervalOptions[5]
+            60L * 60 * 24 -> intervalOptions[6]
+            60L * 60 * 72 -> intervalOptions[7]
+            else -> intervalOptions[8]
         }
     }
     val stringToIntervalMapper: (string: String) -> Long = { string ->
         when (string) {
-            intervalOptions[0] -> 60L * 15
-            intervalOptions[1] -> 60L * 30
-            intervalOptions[2] -> 60L * 60
-            intervalOptions[3] -> 60L * 60 * 3
-            intervalOptions[4] -> 60L * 60 * 6
-            intervalOptions[5] -> 60L * 60 * 24
-            intervalOptions[6] -> 60L * 60 * 72
+            intervalOptions[0] -> 5L
+            intervalOptions[1] -> 60L * 15
+            intervalOptions[2] -> 60L * 30
+            intervalOptions[3] -> 60L * 60
+            intervalOptions[4] -> 60L * 60 * 3
+            intervalOptions[5] -> 60L * 60 * 6
+            intervalOptions[6] -> 60L * 60 * 24
+            intervalOptions[7] -> 60L * 60 * 72
             else -> 0
         }
     }
@@ -284,6 +287,7 @@ fun AutoAdvance(
             title = stringResource(R.string.auto_advance_interval),
         )
         val intervalOptions = listOf(
+            stringResource(R.string.auto_advance_interval_5s),
             stringResource(R.string.auto_advance_interval_15m),
             stringResource(R.string.auto_advance_interval_30m),
             stringResource(R.string.auto_advance_interval_1h),
