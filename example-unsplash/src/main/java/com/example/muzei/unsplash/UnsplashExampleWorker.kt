@@ -49,6 +49,32 @@ class UnsplashExampleWorker(
     }
 
     override fun doWork(): Result {
+        // Each load draws from one feed at random, weighted so that Met
+        // ukiyo-e landscapes make up a third of the mix and the four Flickr
+        // feeds (favorites, following, explore, family) share the rest equally.
+        if ((0 until 3).random() == 0) {
+            return loadMetPrints()
+        }
+        return loadFlickrPhotos()
+    }
+
+    private fun loadMetPrints(): Result {
+        val artwork = try {
+            MetSource.landscapePrints(applicationContext)
+        } catch (e: IOException) {
+            Log.w(TAG, "Error reading Met response", e)
+            return Result.retry()
+        }
+        if (artwork.isEmpty()) {
+            Log.w(TAG, "No landscape prints returned from the Met API.")
+            return Result.retry()
+        }
+        ProviderContract.getProviderClient(applicationContext, UNSPLASH_AUTHORITY)
+                .addArtwork(artwork)
+        return Result.success()
+    }
+
+    private fun loadFlickrPhotos(): Result {
         val photos = try {
             UnsplashService.popularPhotos()
         } catch (e: IOException) {
