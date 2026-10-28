@@ -16,103 +16,104 @@
 
 [versions]
 
-compileSdk = "34"
-targetSdk = "33"
-agp = "8.5.0"
+compileSdk = "37"
+targetSdk = "37"
+agp = "9.4.1"
 
 # AndroidX
-activity = "1.9.0"
-appCompat = "1.7.0"
-browser = "1.8.0"
-concurrent = "1.2.0"
-constraintLayout = "2.1.4"
-core = "1.13.1"
-drawerLayout = "1.2.0"
-exifInterface = "1.3.7"
-fragment = "1.8.0"
-lifecycle = "2.8.2"
-multidex = "2.0.1"
-navigation = "2.7.7"
-paging = "3.3.0"
+activity = "1.13.0"
+appCompat = "1.8.0"
+browser = "1.10.0"
+compose = "2026.09.00"
+concurrent = "1.3.0"
+core = "1.19.1"
+exifInterface = "1.4.2"
+fragment = "1.9.1"
+lifecycle = "2.11.0"
+navigation = "2.10.2"
+paging = "3.5.3"
 preference = "1.2.1"
-recyclerView = "1.3.2"
-room = "2.6.1"
-swipeRefreshLayout = "1.1.0"
-viewPager2 = "1.1.0"
-watchface = "1.2.1"
-wear = "1.3.0"
-wearPhoneInteractions = "1.0.1"
-wearRemoteInteractions = "1.0.0"
-workManager = "2.9.0"
+recyclerView = "1.4.0"
+room3 = "3.0.3"
+watchface = "1.3.0"
+wear = "1.4.0"
+wearPhoneInteractions = "1.1.1"
+wearRemoteInteractions = "1.2.0"
+workManager = "2.12.0"
 
 # Firebase
-firebaseAnalytics = "21.6.1"
-firebaseCrashlytics = "18.6.3"
-firebaseCrashlyticsGradle = "2.9.9"
-firebasePerf = "20.5.2"
-firebasePerfPlugin = "1.4.2"
+firebaseAnalytics = "24.0.0"
+firebaseCrashlytics = "21.0.1"
+firebaseCrashlyticsGradle = "3.0.8"
+firebasePerf = "23.0.1"
+firebasePerfPlugin = "2.0.2"
 
 # Google Play services
-googleServices = "4.4.1"
-playServicesWearable = "18.1.0"
-wearable = "2.9.0"
+googleServices = "4.5.0"
+playServicesWearable = "20.0.1"
 
 # Jetbrains
-coroutines = "1.7.3"
-dokka = "1.9.0"
-kotlin = "1.9.10"
-ksp = "1.9.10-1.0.13"
+coroutines = "1.11.0"
+dokka = "2.2.0"
+kotlin = "2.4.21"
+ksp = "2.3.7"
 
 # Other
-coil = "1.3.2"
-material = "1.11.0"
-#noinspection GradleDependency
-okhttp = "3.12.12"
+coil = "3.6.3"
+material = "1.14.0"
+okhttp = "5.5.1"
 okhttpCoroutines = "1.0"
-retrofit = "2.9.0"
-subsampling = "3.10.0"
-tasker = "0.4.1"
+retrofit = "3.0.0"
+tasker = "0.4.10"
+telephoto = "0.19.0"
 
 [libraries]
 
 agp = { group = "com.android.tools.build", name = "gradle", version.ref = "agp" }
 
 # Use the minimum value needed for muzei-api to avoid forcing apps to upgrade
-#noinspection GradleDependency
+#noinspection SimilarGradleDependency,GradleDependency
 api-core = { group = "androidx.core", name = "core", version.prefer = "1.1.0" }
+#noinspection SimilarGradleDependency
 api-exifinterface = { group = "androidx.exifinterface", name = "exifinterface", version.ref = "exifInterface" }
 
 # AndroidX
-activity = { group = "androidx.activity", name = "activity-ktx", version.ref = "activity" }
+activity = { group = "androidx.activity", name = "activity-compose", version.ref = "activity" }
 appCompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appCompat" }
 browser = { group = "androidx.browser", name = "browser", version.ref = "browser" }
+compose-animation-graphics = { group = "androidx.compose.animation", name = "animation-graphics" }
+compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "compose" }
+compose-icons = { group = "androidx.compose.material", name = "material-icons-extended" }
+compose-livedata = { group = "androidx.compose.runtime", name = "runtime-livedata" }
+compose-material3 = { group = "androidx.compose.material3", name = "material3" }
+compose-ui-tooling-runtime = { group = "androidx.compose.ui", name = "ui-tooling" }
+compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
 concurrent = { group = "androidx.concurrent", name = "concurrent-futures-ktx", version.ref = "concurrent" }
-constraintLayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintLayout" }
-core = { group = "androidx.core", name = "core-ktx", version.ref = "core" }
-drawerLayout = { group = "androidx.drawerlayout", name = "drawerlayout", version.ref = "drawerLayout" }
+#noinspection SimilarGradleDependency
+core = { group = "androidx.core", name = "core", version.ref = "core" }
+#noinspection SimilarGradleDependency
 exifInterface = { group = "androidx.exifinterface", name = "exifinterface", version.ref = "exifInterface" }
-fragment = { group = "androidx.fragment", name = "fragment-ktx", version.ref = "fragment" }
+fragment = { group = "androidx.fragment", name = "fragment-compose", version.ref = "fragment" }
 lifecycle-common = { group = "androidx.lifecycle", name = "lifecycle-common-java8", version.ref = "lifecycle" }
 lifecycle-livedata = { group = "androidx.lifecycle", name = "lifecycle-livedata", version.ref = "lifecycle" }
-lifecycle-runtime = { group = "androidx.lifecycle", name = "lifecycle-runtime", version.ref = "lifecycle" }
-multidex = { group = "androidx.multidex", name = "multidex", version.ref = "multidex" }
-navigation-fragment = { group = "androidx.navigation", name = "navigation-fragment-ktx", version.ref = "navigation" }
+lifecycle-runtime = { group = "androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "lifecycle" }
+lifecycle-viewmodel = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "lifecycle" }
+navigation-fragment = { group = "androidx.navigation", name = "navigation-fragment-compose", version.ref = "navigation" }
 navigation-safeargs = { group = "androidx.navigation", name = "navigation-safe-args-gradle-plugin", version.ref = "navigation" }
 navigation-ui = { group = "androidx.navigation", name = "navigation-ui-ktx", version.ref = "navigation" }
-paging = { group = "androidx.paging", name = "paging-runtime", version.ref = "paging" }
+paging-compose = { group = "androidx.paging", name = "paging-compose", version.ref = "paging" }
+paging-runtime = { group = "androidx.paging", name = "paging-runtime", version.ref = "paging" }
 preference = { group = "androidx.preference", name = "preference-ktx", version.ref = "preference" }
-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
-room-paging = { group = "androidx.room", name = "room-paging", version.ref = "room" }
-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+room3-runtime = { group = "androidx.room3", name = "room3-runtime", version.ref = "room3" }
+room3-livedata = { group = "androidx.room3", name = "room3-livedata", version.ref = "room3" }
+room3-paging = { group = "androidx.room3", name = "room3-paging", version.ref = "room3" }
+room3-wrapper = { group = "androidx.room3", name = "room3-sqlite-wrapper", version.ref = "room3" }
+room3-compiler = { group = "androidx.room3", name = "room3-compiler", version.ref = "room3" }
 recyclerView = { group = "androidx.recyclerview", name = "recyclerview", version.ref = "recyclerView" }
-swipeRefreshLayout = { group = "androidx.swiperefreshlayout", name = "swiperefreshlayout", version.ref = "swipeRefreshLayout" }
-viewPager2 = { group = "androidx.viewpager2", name = "viewpager2", version.ref = "viewPager2" }
 wear-core = { group = "androidx.wear", name = "wear", version.ref = "wear" }
 wear-phone = { group = "androidx.wear", name = "wear-phone-interactions", version.ref = "wearPhoneInteractions" }
 wear-remote = { group = "androidx.wear", name = "wear-remote-interactions", version.ref = "wearRemoteInteractions" }
-watchface-core = { group = "androidx.wear.watchface", name = "watchface", version.ref = "watchface" }
 watchface-complications-data = { group = "androidx.wear.watchface", name = "watchface-complications-data-source-ktx", version.ref = "watchface" }
-watchface-complications-rendering = { group = "androidx.wear.watchface", name = "watchface-complications-rendering", version.ref = "watchface" }
 workManager = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workManager" }
 
 # Firebase
@@ -125,8 +126,6 @@ firebase-perf-plugin = { group = "com.google.firebase", name = "perf-plugin", ve
 # Google Play services
 googleservices = { group = "com.google.gms", name = "google-services", version.ref = "googleServices" }
 wearable-playservices = { group = "com.google.android.gms", name = "play-services-wearable", version.ref = "playServicesWearable" }
-wearable-compile = { group = "com.google.android.wearable", name = "wearable", version.ref = "wearable" }
-wearable-support = { group = "com.google.android.support", name = "wearable", version.ref = "wearable" }
 
 # Jetbrains
 coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
@@ -136,11 +135,20 @@ dokka = { group = "org.jetbrains.dokka", name = "dokka-gradle-plugin", version.r
 kotlin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlin" }
 
 # Other
-coil = { group = "io.coil-kt", name = "coil", version.ref = "coil" }
+coil-compose = { group = "io.coil-kt.coil3", name = "coil-compose", version.ref = "coil" }
+coil-runtime = { group = "io.coil-kt.coil3", name = "coil", version.ref = "coil" }
+coil-okhttp = { group = "io.coil-kt.coil3", name = "coil-network-okhttp", version.ref = "coil" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 okhttp-core = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
 okhttp-coroutines = { group = "ru.gildor.coroutines", name = "kotlin-coroutines-okhttp", version.ref = "okhttpCoroutines" }
 retrofit-core = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
 retrofit-moshi = { group = "com.squareup.retrofit2", name = "converter-moshi", version.ref = "retrofit" }
-subsampling = { group = "com.davemorrissey.labs", name = "subsampling-scale-image-view-androidx", version.ref = "subsampling" }
 tasker = { group = "com.joaomgcd", name = "taskerpluginlibrary", version.ref = "tasker" }
+telephoto = { group = "me.saket.telephoto", name = "zoomable-image-coil3", version.ref = "telephoto" }
+
+[plugins]
+dokka-html = { id = "org.jetbrains.dokka", version.ref = "dokka" }
+dokka-javadoc = { id = "org.jetbrains.dokka-javadoc", version.ref = "dokka" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }

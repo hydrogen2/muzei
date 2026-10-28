@@ -15,7 +15,7 @@
   limitations under the License.
   -->
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
-    <string name="gallery_add_fab">Ajouter des photos</string>
+    <string name="gallery_add_fab">Ajouter des photos ou un dossier</string>
     <string name="gallery_add_photos">Ajouter des photos</string>
     <string name="gallery_add_folder">Ajouter un dossier</string>
     <string name="gallery_internal_storage_message">Vous ne voyez rien ? Essayez d\'activer le stockage interne dans le menu déroulant</string>
@@ -33,6 +33,7 @@
         <item quantity="other"><xliff:g id="quantity" example="2">%1$d</xliff:g> photos</item>
     </plurals>
     <string name="gallery_empty">Photos aléatoires de l\'appareil photo</string>
+    <string name="gallery_reselect_selected_photos">Sélectionner à nouveau les photos sélectionnées</string>
     <string name="gallery_empty_subtitle">Choisir plutôt des photos spécifiques</string>
     <string name="gallery_from_gallery">Depuis votre galerie</string>
     <string name="gallery_touch_to_view">Appuyer pour visualiser</string>

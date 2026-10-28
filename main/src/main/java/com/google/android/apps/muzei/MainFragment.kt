@@ -17,13 +17,13 @@
 package com.google.android.apps.muzei
 
 import android.graphics.Color
-import android.os.Build
 import android.os.Bundle
 import android.view.View
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.Insets
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
@@ -72,14 +72,13 @@ class MainFragment : Fragment(R.layout.main_fragment), ChooseProviderFragment.Ca
         navController.currentBackStackEntryFlow.map { backStackEntry ->
             backStackEntry.arguments
         }.collectIn(viewLifecycleOwner) { args ->
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                requireActivity().window.statusBarColor =
-                    if (args?.getBoolean("useDarkStatusBar") == true) {
-                        darkStatusBarColor
-                    } else {
-                        Color.TRANSPARENT
-                    }
-            }
+            @Suppress("DEPRECATION")
+            requireActivity().window.statusBarColor =
+                if (args?.getBoolean("useDarkStatusBar") == true) {
+                    darkStatusBarColor
+                } else {
+                    Color.TRANSPARENT
+                }
         }
         // React to the destination changing for analytics
         navController.currentBackStackEntryFlow.map { backStackEntry ->
@@ -118,14 +117,9 @@ class MainFragment : Fragment(R.layout.main_fragment), ChooseProviderFragment.Ca
         }
         (binding.navBar as NavigationBarView).setOnItemReselectedListener { item ->
             if (item.itemId == R.id.main_art_details) {
-                @Suppress("DEPRECATION")
-                activity?.window?.decorView?.systemUiVisibility = (View.SYSTEM_UI_FLAG_LOW_PROFILE
-                        or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                        or View.SYSTEM_UI_FLAG_FULLSCREEN
-                        or View.SYSTEM_UI_FLAG_IMMERSIVE
-                        or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                        or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                        or View.SYSTEM_UI_FLAG_LAYOUT_STABLE)
+                val window = activity?.window ?: return@setOnItemReselectedListener
+                WindowInsetsControllerCompat(window, window.decorView)
+                    .hide(WindowInsetsCompat.Type.systemBars())
             }
         }
 
@@ -154,14 +148,8 @@ class MainFragment : Fragment(R.layout.main_fragment), ChooseProviderFragment.Ca
                     insets.systemWindowInsetTop,
                     insets.systemWindowInsetRight,
                     insets.systemWindowInsetBottom)).build())
-            insets.consumeSystemWindowInsets().consumeDisplayCutout()
-        }
 
-        // Listen for visibility changes to know when to hide our views
-        @Suppress("DEPRECATION")
-        view.setOnSystemUiVisibilityChangeListener { vis ->
-            val visible = vis and View.SYSTEM_UI_FLAG_LOW_PROFILE == 0
-
+            val visible = insets.isVisible(WindowInsetsCompat.Type.statusBars())
             with(binding.navBar) {
                 visibility = View.VISIBLE
                 animate()
@@ -174,6 +162,7 @@ class MainFragment : Fragment(R.layout.main_fragment), ChooseProviderFragment.Ca
                         updateNavigationBarColor()
                     }
             }
+            insets.consumeSystemWindowInsets().consumeDisplayCutout()
         }
     }
 
@@ -183,19 +172,10 @@ class MainFragment : Fragment(R.layout.main_fragment), ChooseProviderFragment.Ca
     }
 
     private fun updateNavigationBarColor() {
-        activity?.window?.apply {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                val lightNavigationBar = resources.getBoolean(R.bool.light_navigation_bar)
-                if (lightNavigationBar) {
-                    @Suppress("DEPRECATION")
-                    decorView.systemUiVisibility = decorView.systemUiVisibility or
-                            View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
-                } else {
-                    @Suppress("DEPRECATION")
-                    decorView.systemUiVisibility = decorView.systemUiVisibility and
-                            View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR.inv()
-                }
-            }
+        val window = activity?.window ?: return
+        WindowInsetsControllerCompat(window, window.decorView).apply {
+            val lightNavigationBar = resources.getBoolean(R.bool.light_navigation_bar)
+            isAppearanceLightStatusBars = lightNavigationBar
         }
     }
 

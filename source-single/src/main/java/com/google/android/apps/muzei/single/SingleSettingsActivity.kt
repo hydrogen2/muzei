@@ -18,6 +18,7 @@ package com.google.android.apps.muzei.single
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts.GetContent
 import androidx.activity.result.launch
 import androidx.activity.result.registerForActivityResult
@@ -25,6 +26,7 @@ import androidx.lifecycle.lifecycleScope
 import com.google.android.apps.muzei.util.toast
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Settings Activity which allows users to select a new photo
@@ -33,11 +35,14 @@ class SingleSettingsActivity : ComponentActivity() {
 
     private val getImage = registerForActivityResult(GetContent(), "image/*") { uri ->
         if (uri != null) {
-            lifecycleScope.launch(NonCancellable) {
-                val success = SingleArtProvider.setArtwork(
-                        this@SingleSettingsActivity, uri)
-                setResult(if (success) RESULT_OK else RESULT_CANCELED)
-                finish()
+            lifecycleScope.launch {
+                withContext(NonCancellable) {
+                    val success = SingleArtProvider.setArtwork(
+                        this@SingleSettingsActivity, uri
+                    )
+                    setResult(if (success) RESULT_OK else RESULT_CANCELED)
+                    finish()
+                }
             }
         } else {
             setResult(RESULT_CANCELED)
@@ -47,9 +52,10 @@ class SingleSettingsActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         try {
             getImage.launch()
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             toast(R.string.single_get_content_failure)
             finish()
         }

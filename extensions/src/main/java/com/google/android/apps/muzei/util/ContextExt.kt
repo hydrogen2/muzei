@@ -17,6 +17,7 @@
 package com.google.android.apps.muzei.util
 
 import android.content.Context
+import android.provider.Settings
 import android.widget.Toast
 import androidx.annotation.StringRes
 
@@ -38,3 +39,16 @@ fun Context.toast(text: CharSequence, duration: Int = Toast.LENGTH_SHORT) {
 fun Context.toast(@StringRes resId: Int, duration: Int = Toast.LENGTH_SHORT) {
     Toast.makeText(this, resId, duration).apply { show() }
 }
+
+/**
+ * Determines whether the device is in reduced motion mode (e.g., animations are disabled).
+ */
+val Context.isReducedMotionEnabled: Boolean
+    get() {
+        val animationDuration = try {
+            Settings.Global.getFloat(contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE)
+        } catch (_: Settings.SettingNotFoundException) {
+            1f
+        }
+        return animationDuration == 0f
+    }

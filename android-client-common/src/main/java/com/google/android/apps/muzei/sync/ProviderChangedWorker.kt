@@ -20,9 +20,7 @@ import android.content.ContentUris
 import android.content.Context
 import android.database.Cursor
 import android.net.Uri
-import android.os.Build
 import android.util.Log
-import androidx.annotation.RequiresApi
 import androidx.core.content.edit
 import androidx.core.net.toUri
 import androidx.lifecycle.Observer
@@ -47,7 +45,6 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.withContext
 import net.nurik.roman.muzei.androidclientcommon.BuildConfig
 import java.io.IOException
-import java.util.HashSet
 import java.util.concurrent.TimeUnit
 
 /**
@@ -85,11 +82,13 @@ class ProviderChangedWorker(
                             .build())
         }
 
-        @RequiresApi(Build.VERSION_CODES.N)
         fun addPersistentListener(context: Context, name: String) {
             val preferences = PreferenceManager.getDefaultSharedPreferences(context)
-            val persistentListeners = preferences.getStringSet(PREF_PERSISTENT_LISTENERS,
-                    null) ?: HashSet()
+            val persistentListeners = HashSet<String>().apply {
+                preferences.getStringSet(PREF_PERSISTENT_LISTENERS, null)?.let {
+                    addAll(it)
+                }
+            }
             persistentListeners.add(name)
             preferences.edit {
                 putStringSet(PREF_PERSISTENT_LISTENERS, persistentListeners)
@@ -104,11 +103,13 @@ class ProviderChangedWorker(
             return persistentListeners.isNotEmpty()
         }
 
-        @RequiresApi(Build.VERSION_CODES.N)
         fun removePersistentListener(context: Context, name: String) {
             val preferences = PreferenceManager.getDefaultSharedPreferences(context)
-            val persistentListeners = preferences.getStringSet(PREF_PERSISTENT_LISTENERS,
-                    null) ?: HashSet()
+            val persistentListeners = HashSet<String>().apply {
+                preferences.getStringSet(PREF_PERSISTENT_LISTENERS, null)?.let {
+                    addAll(it)
+                }
+            }
             persistentListeners.remove(name)
             preferences.edit {
                 putStringSet(PREF_PERSISTENT_LISTENERS, persistentListeners)
@@ -118,7 +119,6 @@ class ProviderChangedWorker(
             }
         }
 
-        @RequiresApi(Build.VERSION_CODES.N)
         internal fun activeListeningStateChanged(context: Context, listening: Boolean) {
             val preferences = PreferenceManager.getDefaultSharedPreferences(context)
             val persistentListeners = preferences.getStringSet(PREF_PERSISTENT_LISTENERS,
@@ -132,7 +132,6 @@ class ProviderChangedWorker(
             }
         }
 
-        @RequiresApi(Build.VERSION_CODES.N)
         private fun startListening(context: Context) {
             val providerManager = ProviderManager.getInstance(context)
             if (!providerManager.hasActiveObservers()) {
@@ -157,7 +156,6 @@ class ProviderChangedWorker(
             }
         }
 
-        @RequiresApi(Build.VERSION_CODES.N)
         private fun scheduleObserver(context: Context, contentUri: Uri) {
             val workManager = WorkManager.getInstance(context)
             workManager.enqueue(OneTimeWorkRequestBuilder<ProviderChangedWorker>()
@@ -181,8 +179,7 @@ class ProviderChangedWorker(
         val tag = inputData.getString(TAG) ?: ""
         // First schedule the observer to pick up any changes fired
         // by the work done in handleProviderChange
-        if (tag == PERSISTENT_CHANGED_TAG &&
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+        if (tag == PERSISTENT_CHANGED_TAG) {
             inputData.getString(EXTRA_CONTENT_URI)?.toUri()?.run {
                 scheduleObserver(applicationContext, this)
             }

@@ -21,7 +21,6 @@ import android.content.ContentProviderClient
 import android.content.Context
 import android.database.Cursor
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.os.ParcelFileDescriptor
 import android.os.RemoteException
@@ -98,11 +97,6 @@ class ContentProviderClientCompat private constructor(
     }
 
     override fun close() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            mContentProviderClient.close()
-        } else {
-            @Suppress("DEPRECATION")
-            mContentProviderClient.release()
-        }
+        mContentProviderClient.close()
     }
 }

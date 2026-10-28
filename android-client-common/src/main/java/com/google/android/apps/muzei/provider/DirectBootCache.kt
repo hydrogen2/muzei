@@ -17,7 +17,6 @@
 package com.google.android.apps.muzei.provider
 
 import android.content.Context
-import android.os.Build
 import android.util.Log
 import androidx.core.content.ContextCompat
 import com.google.android.apps.muzei.api.MuzeiContract
@@ -31,6 +30,7 @@ import net.nurik.roman.muzei.androidclientcommon.BuildConfig
 import java.io.File
 import java.io.FileOutputStream
 import java.util.concurrent.TimeUnit
+import kotlin.time.Duration.Companion.milliseconds
 
 object DirectBootCache {
     private const val TAG = "DirectBootCache"
@@ -46,13 +46,9 @@ object DirectBootCache {
 
     @OptIn(DelicateCoroutinesApi::class)
     internal fun onArtworkChanged(context: Context) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
-            // No Direct Boot prior to Android N
-            return
-        }
         cacheJob?.cancel()
         cacheJob = GlobalScope.launch(Dispatchers.IO) {
-            delay(DIRECT_BOOT_CACHE_DELAY_MILLIS)
+            delay(DIRECT_BOOT_CACHE_DELAY_MILLIS.milliseconds)
             if (cacheJob?.isCancelled == true) {
                 return@launch
             }

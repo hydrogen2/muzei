@@ -19,9 +19,7 @@ package com.google.android.apps.muzei.complications
 import android.app.PendingIntent
 import android.content.Intent
 import android.graphics.drawable.Icon
-import android.os.Build
 import android.util.Log
-import androidx.annotation.RequiresApi
 import androidx.core.app.TaskStackBuilder
 import androidx.core.content.edit
 import androidx.preference.PreferenceManager
@@ -55,7 +53,6 @@ import net.nurik.roman.muzei.androidclientcommon.R as CommonR
 /**
  * Provide Muzei backgrounds to other watch faces
  */
-@RequiresApi(Build.VERSION_CODES.N)
 class ArtworkComplicationProviderService : SuspendingComplicationDataSourceService() {
 
     companion object {

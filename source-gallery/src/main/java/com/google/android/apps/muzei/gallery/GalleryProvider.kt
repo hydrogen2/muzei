@@ -70,9 +70,9 @@ class GalleryProvider : ContentProvider() {
                 filename.append(digest.joinToString(separator = "") {
                     it.toInt().and(0xff).toString(16).padStart(2, '0')
                 })
-            } catch (e: NoSuchAlgorithmException) {
+            } catch (_: NoSuchAlgorithmException) {
                 filename.append(uri.toString().hashCode())
-            } catch (e: UnsupportedEncodingException) {
+            } catch (_: UnsupportedEncodingException) {
                 filename.append(uri.toString().hashCode())
             }
 
@@ -88,7 +88,7 @@ class GalleryProvider : ContentProvider() {
         return "vnd.android.cursor.item/vnd.google.android.apps.muzei.gallery.chosen_photos"
     }
 
-    override fun insert(uri: Uri, values: ContentValues?): Uri? {
+    override fun insert(uri: Uri, values: ContentValues?): Uri {
         throw UnsupportedOperationException("Inserts are not supported")
     }
 
@@ -102,7 +102,7 @@ class GalleryProvider : ContentProvider() {
             selection: String?,
             selectionArgs: Array<String>?,
             sortOrder: String?
-    ): Cursor? {
+    ): Cursor {
         throw UnsupportedOperationException("Queries are not supported")
     }
 

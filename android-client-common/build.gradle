@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 apply plugin: 'com.android.library'
-apply plugin: 'kotlin-android'
 apply plugin: 'com.google.devtools.ksp'
 
 dependencies {
@@ -23,16 +24,16 @@ dependencies {
     api libs.coroutines.android
     implementation project(':muzei-api')
     implementation project(':extensions')
-    implementation project(':legacy-common')
-    implementation libs.multidex
     implementation libs.core
     implementation libs.exifInterface
     implementation libs.lifecycle.common
     api libs.lifecycle.livedata
     implementation libs.preference
     implementation libs.workManager
-    api libs.room.ktx
-    ksp libs.room.compiler
+    api libs.room3.runtime
+    api libs.room3.livedata
+    api libs.room3.wrapper
+    ksp libs.room3.compiler
     api libs.firebase.analytics
     api libs.firebase.crashlytics
     api libs.firebase.perf
@@ -43,15 +44,17 @@ android {
     namespace 'net.nurik.roman.muzei.androidclientcommon'
     compileSdk libs.versions.compileSdk.get().toInteger()
 
+    buildFeatures {
+        buildConfig true
+    }
+
     defaultConfig {
-        minSdkVersion 19
+        minSdkVersion 24
         targetSdkVersion libs.versions.targetSdk.get()
 
         def documentsAuthorityValue = "com.google.android.apps.muzei.documents"
         manifestPlaceholders = [documentsAuthority: documentsAuthorityValue]
         buildConfigField "String", "DOCUMENTS_AUTHORITY", "\"${documentsAuthorityValue}\""
-
-        multiDexEnabled true
 
         ksp {
             arg("room.schemaLocation", "$projectDir/schemas")
@@ -64,8 +67,14 @@ android {
         publicDebug
     }
 
-    kotlinOptions {
-        jvmTarget = '1.8'
-        freeCompilerArgs += "-opt-in=kotlin.RequiresOptIn"
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_11)
+            freeCompilerArgs.add("-opt-in=kotlin.RequiresOptIn")
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
     }
 }

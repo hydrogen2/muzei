@@ -145,7 +145,7 @@ class FeaturedArtWorker(
             // Parse the nextTime
             try {
                 DATE_FORMAT_TZ.parse(this)
-            } catch (e: ParseException) {
+            } catch (_: ParseException) {
                 try {
                     DATE_FORMAT_LOCAL.apply {
                         timeZone = TimeZone.getDefault()
@@ -175,7 +175,7 @@ class FeaturedArtWorker(
         val request = Request.Builder()
                 .url(url)
                 .build()
-        val json = client.newCall(request).await().body()?.string()
+        val json = client.newCall(request).await().body.string()
         val tokener = JSONTokener(json)
         return tokener.nextValue() as? JSONObject ?: throw JSONException("Expected JSON object.")
     }

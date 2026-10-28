@@ -16,6 +16,7 @@
 
 package com.google.android.apps.muzei
 
+import android.annotation.SuppressLint
 import android.app.Application
 import android.content.BroadcastReceiver
 import android.content.ComponentName
@@ -25,10 +26,9 @@ import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
 import android.net.Uri
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.android.apps.muzei.legacy.BuildConfig.LEGACY_AUTHORITY
-import com.google.android.apps.muzei.legacy.LegacySourceManager
 import com.google.android.apps.muzei.room.Artwork
 import com.google.android.apps.muzei.room.MuzeiDatabase
 import com.google.android.apps.muzei.room.getInstalledProviders
@@ -37,7 +37,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.shareIn
+import kotlinx.coroutines.flow.stateIn
 
 data class ProviderInfo(
         val authority: String,
@@ -72,24 +72,13 @@ data class ProviderInfo(
                 selected)
 }
 
+@SuppressLint("WrongConstant")
 class ChooseProviderViewModel(application: Application) : AndroidViewModel(application) {
 
     private val database = MuzeiDatabase.getInstance(application)
 
-    val currentProvider = database.providerDao().getCurrentProviderFlow()
-            .shareIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), 1)
-
-    val unsupportedSources = LegacySourceManager.getInstance(application).unsupportedSources
-            .shareIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), 1)
-
     private val comparator = Comparator<ProviderInfo> { p1, p2 ->
-        // The SourceArtProvider should always the last provider listed
-        if (p1.authority == LEGACY_AUTHORITY) {
-            return@Comparator 1
-        } else if (p2.authority == LEGACY_AUTHORITY) {
-            return@Comparator -1
-        }
-        // Then put providers from Muzei on top
+        // Put providers from Muzei on top
         val pn1 = p1.packageName
         val pn2 = p2.packageName
         if (pn1 != pn2) {
@@ -174,7 +163,7 @@ class ChooseProviderViewModel(application: Application) : AndroidViewModel(appli
                     currentArtworkUri = currentArtwork?.imageUri
             )
         }.sortedWith(comparator)
-    }.shareIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), 1)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000L), emptyList())
 
     internal fun refreshDescription(authority: String) {
         // Remove the current description and trigger the invalidation
@@ -193,9 +182,14 @@ class ChooseProviderViewModel(application: Application) : AndroidViewModel(appli
     }
 
     init {
-        application.registerReceiver(localeChangeReceiver, IntentFilter().apply {
-            addAction(Intent.ACTION_LOCALE_CHANGED)
-        })
+        ContextCompat.registerReceiver(
+            application,
+            localeChangeReceiver,
+            IntentFilter().apply {
+                addAction(Intent.ACTION_LOCALE_CHANGED)
+            },
+            ContextCompat.RECEIVER_NOT_EXPORTED
+        )
     }
 
     override fun onCleared() {

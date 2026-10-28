@@ -20,13 +20,19 @@ android {
     namespace 'com.google.android.apps.muzei.glwallpaper'
     compileSdk libs.versions.compileSdk.get().toInteger()
 
+    enableKotlin = false
+
     defaultConfig {
-        minSdkVersion 19
+        minSdkVersion 24
         targetSdkVersion libs.versions.targetSdk.get()
     }
 
     buildTypes {
         publicBeta
         publicDebug
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
     }
 }

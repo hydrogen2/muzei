@@ -27,7 +27,6 @@ import androidx.core.graphics.drawable.IconCompat
 import androidx.core.os.bundleOf
 import androidx.versionedparcelable.ParcelUtils
 import com.google.android.apps.muzei.api.BuildConfig.API_VERSION
-import com.google.android.apps.muzei.api.R as ApiR
 import com.google.android.apps.muzei.api.UserCommand
 import com.google.android.apps.muzei.api.internal.ProtocolConstants.DEFAULT_VERSION
 import com.google.android.apps.muzei.api.internal.ProtocolConstants.GET_ARTWORK_INFO_MIN_VERSION
@@ -40,16 +39,16 @@ import com.google.android.apps.muzei.api.internal.ProtocolConstants.METHOD_GET_C
 import com.google.android.apps.muzei.api.internal.ProtocolConstants.METHOD_GET_VERSION
 import com.google.android.apps.muzei.api.internal.ProtocolConstants.METHOD_OPEN_ARTWORK_INFO
 import com.google.android.apps.muzei.api.internal.RemoteActionBroadcastReceiver
-import com.google.android.apps.muzei.legacy.BuildConfig.LEGACY_AUTHORITY
-import com.google.android.apps.muzei.legacy.LegacySourceServiceProtocol.LEGACY_COMMAND_ID_NEXT_ARTWORK
 import com.google.android.apps.muzei.util.ContentProviderClientCompat
 import com.google.android.apps.muzei.util.getParcelableCompat
+import com.google.android.apps.muzei.util.sendFromBackground
 import com.google.android.apps.muzei.util.toast
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import net.nurik.roman.muzei.androidclientcommon.R
 import org.json.JSONArray
 import org.json.JSONException
+import com.google.android.apps.muzei.api.R as ApiR
 
 private const val TAG = "Artwork"
 
@@ -64,7 +63,7 @@ suspend fun Artwork.openArtworkInfo(context: Context) {
                 val artworkInfo = result?.getParcelableCompat<PendingIntent>(KEY_GET_ARTWORK_INFO)
                 try {
                     artworkInfo?.run {
-                        send()
+                        sendFromBackground()
                         true
                     } ?: false
                 } catch (e: PendingIntent.CanceledException) {
@@ -93,7 +92,7 @@ suspend fun Artwork.openArtworkInfo(context: Context) {
 
 suspend fun Artwork.getCommands(context: Context) : List<RemoteActionCompat> {
     return ContentProviderClientCompat.getClient(context, imageUri)?.use { client ->
-        return try {
+        try {
             val result = client.call(METHOD_GET_COMMANDS, imageUri.toString(),
                     bundleOf(KEY_VERSION to API_VERSION))
                     ?: return ArrayList()
@@ -112,19 +111,13 @@ suspend fun Artwork.getCommands(context: Context) : List<RemoteActionCompat> {
                         Log.e(TAG, "Error parsing commands from $this", e)
                     }
                     commands.map { command ->
-                        val isLegacyNext = providerAuthority == LEGACY_AUTHORITY &&
-                                command.id == LEGACY_COMMAND_ID_NEXT_ARTWORK
-                        val iconResourceId = if (isLegacyNext)
-                            ApiR.drawable.muzei_launch_command
-                        else
-                            R.drawable.ic_next_artwork
                         RemoteActionCompat(
-                                IconCompat.createWithResource(context, iconResourceId),
+                                IconCompat.createWithResource(context, ApiR.drawable.muzei_launch_command),
                                 command.title ?: "",
                                 command.title ?: "",
                                 RemoteActionBroadcastReceiver.createPendingIntent(context,
                                         providerAuthority, id, command.id)).apply {
-                            setShouldShowIcon(isLegacyNext)
+                            setShouldShowIcon(false)
                         }
                     }
                 } ?: ArrayList()

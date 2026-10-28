@@ -21,11 +21,9 @@ import android.content.ActivityNotFoundException
 import android.content.ComponentName
 import android.content.Intent
 import android.graphics.drawable.Icon
-import android.os.Build
 import android.service.quicksettings.Tile
 import android.service.quicksettings.TileService
 import android.widget.Toast
-import androidx.annotation.RequiresApi
 import androidx.core.service.quicksettings.PendingIntentActivityWrapper
 import androidx.core.service.quicksettings.TileServiceCompat
 import androidx.lifecycle.Lifecycle
@@ -33,10 +31,9 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
 import androidx.lifecycle.lifecycleScope
 import com.google.android.apps.muzei.MuzeiWallpaperService
-import com.google.android.apps.muzei.legacy.LegacySourceManager
-import com.google.android.apps.muzei.legacy.allowsNextArtwork
 import com.google.android.apps.muzei.room.MuzeiDatabase
 import com.google.android.apps.muzei.room.Provider
+import com.google.android.apps.muzei.sync.ProviderManager
 import com.google.android.apps.muzei.util.collectIn
 import com.google.android.apps.muzei.util.toast
 import com.google.android.apps.muzei.wallpaper.WallpaperActiveState
@@ -46,6 +43,7 @@ import com.google.firebase.analytics.analytics
 import com.google.firebase.analytics.logEvent
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import net.nurik.roman.muzei.R
 import net.nurik.roman.muzei.androidclientcommon.R as CommonR
 
@@ -54,7 +52,6 @@ import net.nurik.roman.muzei.androidclientcommon.R as CommonR
  * In cases where Muzei is not activated, the tile also allows users to activate Muzei directly
  * from the tile
  */
-@RequiresApi(Build.VERSION_CODES.N)
 class NextArtworkTileService : TileService(), LifecycleOwner {
     private val lifecycleRegistry: LifecycleRegistry = LifecycleRegistry(this)
 
@@ -85,7 +82,7 @@ class NextArtworkTileService : TileService(), LifecycleOwner {
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_START)
     }
 
-    private suspend fun updateTile() {
+    private fun updateTile() {
         val context = this
         qsTile?.takeIf { !WallpaperActiveState.value || currentProvider != null }?.apply {
             when {
@@ -95,7 +92,7 @@ class NextArtworkTileService : TileService(), LifecycleOwner {
                     label = getString(R.string.action_activate)
                     icon = Icon.createWithResource(context, CommonR.drawable.ic_stat_muzei)
                 }
-                currentProvider.allowsNextArtwork(context) -> {
+                currentProvider?.supportsNextArtwork == true -> {
                     state = Tile.STATE_ACTIVE
                     label = getString(R.string.action_next_artwork)
                     icon = Icon.createWithResource(context, R.drawable.ic_notif_next_artwork)
@@ -114,11 +111,13 @@ class NextArtworkTileService : TileService(), LifecycleOwner {
         qsTile?.run {
             when (state) {
                 Tile.STATE_ACTIVE -> { // Active means we send the 'Next Artwork' command
-                    lifecycleScope.launch(NonCancellable) {
-                        Firebase.analytics.logEvent("next_artwork") {
-                            param(FirebaseAnalytics.Param.CONTENT_TYPE, "tile")
+                    lifecycleScope.launch {
+                        withContext(NonCancellable) {
+                            Firebase.analytics.logEvent("next_artwork") {
+                                param(FirebaseAnalytics.Param.CONTENT_TYPE, "tile")
+                            }
+                            ProviderManager.getInstance(context).nextArtwork()
                         }
-                        LegacySourceManager.getInstance(context).nextArtwork()
                     }
                 }
                 else -> unlockAndRun {
@@ -147,7 +146,7 @@ class NextArtworkTileService : TileService(), LifecycleOwner {
                                 false
                             )
                             TileServiceCompat.startActivityAndCollapse(context, wrapper)
-                        } catch (e: ActivityNotFoundException) {
+                        } catch (_: ActivityNotFoundException) {
                             context.toast(R.string.error_wallpaper_chooser, Toast.LENGTH_LONG)
                         }
                     }

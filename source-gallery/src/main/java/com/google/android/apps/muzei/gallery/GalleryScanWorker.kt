@@ -30,7 +30,6 @@ import android.provider.DocumentsContract
 import android.provider.MediaStore
 import android.text.format.DateUtils
 import android.util.Log
-import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 import androidx.exifinterface.media.ExifInterface
 import androidx.work.CoroutineWorker
@@ -126,7 +125,7 @@ class GalleryScanWorker(
     }
 
     private suspend fun scanChosenPhoto(providerClient: ProviderClient, chosenPhoto: ChosenPhoto) {
-        if (chosenPhoto.isTreeUri && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+        if (chosenPhoto.isTreeUri) {
             addTreeUri(providerClient, chosenPhoto)
         } else {
             val cachedFile = GalleryProvider.getCacheFileForUri(
@@ -164,7 +163,6 @@ class GalleryScanWorker(
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     private suspend fun addTreeUri(providerClient: ProviderClient, chosenPhoto: ChosenPhoto) {
         val treeUri = chosenPhoto.uri
         val allImages = mutableListOf<Uri>()
@@ -220,8 +218,6 @@ class GalleryScanWorker(
                 .delete(applicationContext, listOf(chosenPhoto.id))
     }
 
-    @SuppressLint("Recycle")
-    @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     private fun addAllImagesFromTree(
             images: MutableList<Uri>,
             treeUri: Uri
@@ -249,7 +245,7 @@ class GalleryScanWorker(
                         }
                     }
                 }
-            } catch (e: SecurityException) {
+            } catch (_: SecurityException) {
                 // No longer can read this URI, which means no children from this URI
             } catch (e: Exception) {
                 // Could be anything: NullPointerException, IllegalArgumentException, etc.
@@ -305,11 +301,10 @@ class GalleryScanWorker(
             if (BuildConfig.DEBUG) {
                 Log.i(TAG, "Unable to find any other valid photos in the gallery")
             }
-            return Result.failure()
         } ?: run {
             Log.w(TAG, "Empty cursor.")
-            return Result.failure()
         }
+        return Result.failure()
     }
 
     private suspend fun createArtwork(

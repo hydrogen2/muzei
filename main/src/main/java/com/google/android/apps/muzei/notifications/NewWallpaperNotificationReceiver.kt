@@ -32,17 +32,17 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.RemoteInput
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
-import androidx.core.os.bundleOf
 import androidx.preference.PreferenceManager
+import androidx.savedstate.savedState
 import com.google.android.apps.muzei.ArtDetailOpen
 import com.google.android.apps.muzei.ArtworkInfoRedirectActivity
-import com.google.android.apps.muzei.legacy.LegacySourceManager
-import com.google.android.apps.muzei.legacy.allowsNextArtwork
 import com.google.android.apps.muzei.render.ContentUriImageLoader
 import com.google.android.apps.muzei.room.MuzeiDatabase
 import com.google.android.apps.muzei.room.contentUri
 import com.google.android.apps.muzei.room.getCommands
+import com.google.android.apps.muzei.sync.ProviderManager
 import com.google.android.apps.muzei.util.goAsync
+import com.google.android.apps.muzei.util.sendFromBackground
 import com.google.firebase.Firebase
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.analytics.analytics
@@ -177,7 +177,7 @@ class NewWallpaperNotificationReceiver : BroadcastReceiver() {
             val extender = NotificationCompat.WearableExtender()
 
             // Support Next Artwork
-            if (provider.allowsNextArtwork(context)) {
+            if (provider.supportsNextArtwork) {
                 val nextPendingIntent = PendingIntent.getBroadcast(context, 0,
                         Intent(context, NewWallpaperNotificationReceiver::class.java)
                                 .setAction(ACTION_NEXT_ARTWORK),
@@ -311,9 +311,10 @@ class NewWallpaperNotificationReceiver : BroadcastReceiver() {
                 ACTION_MARK_NOTIFICATION_READ -> markNotificationRead(context)
                 ACTION_NEXT_ARTWORK -> {
                     Firebase.analytics.logEvent(
-                            "next_artwork", bundleOf(
-                            FirebaseAnalytics.Param.CONTENT_TYPE to "notification"))
-                    LegacySourceManager.getInstance(context).nextArtwork()
+                        "next_artwork", savedState {
+                            putString(FirebaseAnalytics.Param.CONTENT_TYPE, "notification")
+                        })
+                    ProviderManager.getInstance(context).nextArtwork()
                 }
                 ACTION_USER_COMMAND -> triggerUserCommandFromRemoteInput(context, intent)
             }
@@ -336,8 +337,8 @@ class NewWallpaperNotificationReceiver : BroadcastReceiver() {
                         param(FirebaseAnalytics.Param.CONTENT_TYPE, "notification")
                     }
                     try {
-                        actionIntent.send()
-                    } catch (e: PendingIntent.CanceledException) {
+                        actionIntent.sendFromBackground()
+                    } catch (_: PendingIntent.CanceledException) {
                         // Why do you give us a cancelled PendingIntent.
                         // We can't do anything with that.
                     }

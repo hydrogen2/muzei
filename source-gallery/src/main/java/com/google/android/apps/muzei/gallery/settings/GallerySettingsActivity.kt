@@ -1,0 +1,577 @@
+/*
+ * Copyright 2014 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.google.android.apps.muzei.gallery.settings
+
+import android.annotation.SuppressLint
+import android.content.ActivityNotFoundException
+import android.content.Context
+import android.content.Intent
+import android.content.pm.ActivityInfo
+import android.net.Uri
+import android.os.Bundle
+import android.provider.DocumentsContract
+import android.provider.Settings
+import android.util.Log
+import android.widget.Toast
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContract
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.launch
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberTopAppBarState
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.rememberSerializable
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.SnapshotStateSet
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import androidx.core.content.edit
+import androidx.core.view.WindowCompat
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.savedstate.compose.serialization.serializers.MutableStateSerializer
+import com.google.android.apps.muzei.gallery.GalleryDatabase
+import com.google.android.apps.muzei.gallery.GalleryScanWorker
+import com.google.android.apps.muzei.gallery.R
+import com.google.android.apps.muzei.gallery.RequestStoragePermissions
+import com.google.android.apps.muzei.gallery.contentUri
+import com.google.android.apps.muzei.gallery.theme.GalleryTheme
+import com.google.android.apps.muzei.util.getString
+import com.google.android.apps.muzei.util.getStringOrNull
+import com.google.android.apps.muzei.util.plus
+import com.google.android.apps.muzei.util.toast
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.util.LinkedList
+
+private class GetContentsFromActivityInfo : ActivityResultContract<ActivityInfo, List<Uri>>() {
+    private val getMultipleContents = ActivityResultContracts.GetMultipleContents()
+
+    override fun createIntent(context: Context, input: ActivityInfo): Intent =
+            getMultipleContents.createIntent(context, "image/*")
+                    .setClassName(input.packageName, input.name)
+
+    override fun parseResult(resultCode: Int, intent: Intent?): List<Uri> =
+            getMultipleContents.parseResult(resultCode, intent)
+}
+
+private class ChoosePhotos : ActivityResultContract<Unit, List<Uri>>() {
+    private val openMultipleDocuments = ActivityResultContracts.OpenMultipleDocuments()
+
+    @SuppressLint("InlinedApi")
+    override fun createIntent(context: Context, input: Unit) =
+            openMultipleDocuments.createIntent(context, arrayOf("image/*"))
+                    .addCategory(Intent.CATEGORY_OPENABLE)
+                    .putExtra(DocumentsContract.EXTRA_EXCLUDE_SELF, true)
+
+    override fun parseResult(resultCode: Int, intent: Intent?): List<Uri> =
+            openMultipleDocuments.parseResult(resultCode, intent)
+}
+
+private class ChooseFolder : ActivityResultContract<Unit, Uri?>() {
+    private val openDocumentTree = ActivityResultContracts.OpenDocumentTree()
+
+    @SuppressLint("InlinedApi")
+    override fun createIntent(context: Context, input: Unit) =
+            openDocumentTree.createIntent(context, null)
+                    .putExtra(DocumentsContract.EXTRA_EXCLUDE_SELF, true)
+
+    override fun parseResult(resultCode: Int, intent: Intent?) =
+            openDocumentTree.parseResult(resultCode, intent)
+}
+
+class GallerySettingsActivity : ComponentActivity() {
+
+    companion object {
+        private const val TAG = "GallerySettingsActivity"
+        private const val SHARED_PREF_NAME = "GallerySettingsActivity"
+        private const val SHOW_INTERNAL_STORAGE_MESSAGE = "show_internal_storage_message"
+    }
+
+    private var chosenPhotosCount = mutableIntStateOf(0)
+    private val permissionStateFlow by lazy {
+        MutableStateFlow(checkRequestPermissionState(this))
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        WindowCompat.enableEdgeToEdge(window)
+        val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
+        setContent {
+            val darkTheme = isSystemInDarkTheme()
+            LaunchedEffect(darkTheme) {
+                windowInsetsController.isAppearanceLightStatusBars = !darkTheme
+                windowInsetsController.isAppearanceLightNavigationBars = !darkTheme
+            }
+            GalleryTheme(
+                dynamicColor = false
+            ) {
+                val viewModel: GallerySettingsViewModel = viewModel()
+                val photos = viewModel.chosenPhotos.collectAsLazyPagingItems()
+                var addMode: AddMode by rememberSerializable(
+                    serializer = MutableStateSerializer()
+                ) {
+                    mutableStateOf(AddFab)
+                }
+                val selectedPhotoIds = rememberSerializable(
+                    serializer = SnapshotStateSetSerializer()
+                ) { SnapshotStateSet<Long>() }
+                val scrollBehavior =
+                    TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
+
+                @Suppress("SpellCheckingInspection")
+                val snackbarHostState = remember { SnackbarHostState() }
+
+                Scaffold(
+                    modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+                    topBar = {
+                        val getContentActivityInfoList by viewModel.getContentActivityInfoList.collectAsState(
+                            emptyList()
+                        )
+                        val getContents = rememberLauncherForActivityResult(
+                            GetContentsFromActivityInfo()
+                        ) { photos ->
+                            processSelectedUris(photos)
+                            addMode = AddFab
+                        }
+                        var showImportPhotosDialog by rememberSaveable { mutableStateOf(false) }
+                        LaunchedEffect(getContentActivityInfoList.isEmpty()) {
+                            // Hide the dialog if the list of activities becomes empty
+                            if (getContentActivityInfoList.isEmpty() && showImportPhotosDialog) {
+                                showImportPhotosDialog = false
+                            }
+                        }
+                        var showConfirmClearPhotosDialog by rememberSaveable { mutableStateOf(false) }
+                        LaunchedEffect(chosenPhotosCount.intValue > 0) {
+                            // Hide the dialog if the number of chosen photos goes to zero
+                            if (chosenPhotosCount.intValue > 0 && showConfirmClearPhotosDialog) {
+                                showConfirmClearPhotosDialog = false
+                            }
+                        }
+                        val context = LocalContext.current
+                        val scope = rememberCoroutineScope()
+                        GalleryTopAppBar(
+                            importPhotoCount = getContentActivityInfoList.size,
+                            importPhotoTitle = if (getContentActivityInfoList.size == 1) {
+                                // If there's only one app that supports ACTION_GET_CONTENT, tell the user what that app is
+                                stringResource(
+                                    R.string.gallery_action_import_photos_from,
+                                    getContentActivityInfoList.first().loadLabel(packageManager)
+                                )
+                            } else {
+                                stringResource(R.string.gallery_action_import_photos)
+                            },
+                            photoCount = photos.itemCount,
+                            scrollBehavior = scrollBehavior,
+                            onImportPhotos = {
+                                when (getContentActivityInfoList.size) {
+                                    0 -> {
+                                        // Ignore
+                                    }
+
+                                    1 -> {
+                                        // Just start the one ACTION_GET_CONTENT app
+                                        getContents.launch(getContentActivityInfoList.first())
+                                    }
+
+                                    else -> {
+                                        // Let the user pick which app they want to import photos from
+                                        showImportPhotosDialog = true
+                                    }
+                                }
+                            },
+                            onClearPhotos = {
+                                showConfirmClearPhotosDialog = true
+                            }
+                        )
+                        // Import Photos Dialog
+                        if (showImportPhotosDialog) {
+                            val labels = remember(getContentActivityInfoList) {
+                                getContentActivityInfoList.map {
+                                    it.loadLabel(packageManager).toString()
+                                }
+                            }
+                            GalleryImportPhotosDialog(
+                                getContentActivityInfoList = labels,
+                                onInfoSelected = { index ->
+                                    getContents.launch(getContentActivityInfoList[index])
+                                    showImportPhotosDialog = false
+                                },
+                                onDismissRequest = {
+                                    showImportPhotosDialog = false
+                                }
+                            )
+                        }
+                        // Confirm Clear Photos Dialog
+                        if (showConfirmClearPhotosDialog) {
+                            GalleryConfirmClearPhotosDialog(
+                                onDismiss = { showConfirmClearPhotosDialog = false },
+                                onConfirm = {
+                                    showConfirmClearPhotosDialog = false
+                                    scope.launch {
+                                        withContext(NonCancellable) {
+                                            GalleryDatabase.getInstance(context)
+                                                .chosenPhotoDao().deleteAll(context)
+                                        }
+                                    }
+                                }
+                            )
+                        }
+                        // Selection toolbar
+                        var title by remember { mutableStateOf(selectedPhotoIds.size.toString()) }
+                        val firstSelectedId = selectedPhotoIds.firstOrNull()
+                        LaunchedEffect(selectedPhotoIds.size, firstSelectedId) {
+                            val selectedCount = selectedPhotoIds.size
+                            if (selectedCount == 0) {
+                                // Don't update the title as we are animating out
+                                return@LaunchedEffect
+                            }
+                            title = selectedPhotoIds.size.toString()
+                            if (selectedCount == 1 && firstSelectedId != null) {
+                                // If they've selected a tree URI, show the DISPLAY_NAME instead of just '1'
+                                val chosenPhoto =
+                                    GalleryDatabase.getInstance(this@GallerySettingsActivity)
+                                        .chosenPhotoDao()
+                                        .getChosenPhoto(firstSelectedId)
+                                if (chosenPhoto?.isTreeUri == true) {
+                                    val displayName = getDisplayNameForTreeUri(chosenPhoto.uri)
+                                    if (displayName != null && displayName.isNotEmpty()) {
+                                        title = displayName
+                                    }
+                                }
+                            }
+                        }
+                        GallerySelectionToolbar(
+                            selectionCount = selectedPhotoIds.size,
+                            title = title,
+                            onReset = {
+                                selectedPhotoIds.clear()
+                            },
+                            onRemove = {
+                                val removePhotos = ArrayList(selectedPhotoIds)
+                                scope.launch {
+                                    withContext(NonCancellable) {
+                                        // Remove chosen URIs
+                                        GalleryDatabase.getInstance(this@GallerySettingsActivity)
+                                            .chosenPhotoDao()
+                                            .delete(this@GallerySettingsActivity, removePhotos)
+                                    }
+                                }
+                                selectedPhotoIds.clear()
+                            }
+                        )
+                    },
+                    snackbarHost = {
+                        SnackbarHost(hostState = snackbarHostState)
+                    },
+                    contentWindowInsets = WindowInsets(),
+                ) { innerPadding ->
+                    Box(Modifier.fillMaxSize()) {
+                        if (photos.itemCount > 0) {
+                            // Show the list
+                            LaunchedEffect(photos.loadState.isIdle) {
+                                if (photos.loadState.isIdle) {
+                                    chosenPhotosCount.intValue = photos.itemCount
+                                    onDataSetChanged()
+                                }
+                            }
+                            GalleryChosenPhotoGrid(
+                                photos = photos,
+                                contentPadding = innerPadding + WindowInsets.safeDrawing
+                                    .only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom)
+                                    .asPaddingValues() + PaddingValues(bottom = 90.dp),
+                                checkedItemIds = selectedPhotoIds,
+                                onCheckedToggled = { chosenPhoto ->
+                                    if (selectedPhotoIds.contains(chosenPhoto.id)) {
+                                        selectedPhotoIds.remove(chosenPhoto.id)
+                                    } else {
+                                        selectedPhotoIds.add(chosenPhoto.id)
+                                    }
+                                },
+                            ) { chosenPhoto, maxImages ->
+                                if (chosenPhoto.isTreeUri)
+                                    getImagesFromTreeUri(chosenPhoto.uri, maxImages)
+                                else
+                                    listOf(chosenPhoto.contentUri)
+                            }
+                        } else {
+                            // Show the empty screen placeholder
+                            val requestStoragePermission = rememberLauncherForActivityResult(
+                                RequestStoragePermissions()
+                            ) {
+                                onDataSetChanged()
+                            }
+                            GalleryEmpty(
+                                permissionStateFlow = permissionStateFlow,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(
+                                        WindowInsets.safeDrawing
+                                            .only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom)
+                                            .asPaddingValues()
+                                    ),
+                                contentPadding = PaddingValues(bottom = 90.dp),
+                                onReselectSelectedPhotos = {
+                                    requestStoragePermission.launch()
+                                },
+                                onEnableRandom = {
+                                    requestStoragePermission.launch()
+                                },
+                                onEditPermissionSettings = {
+                                    val intent = Intent(
+                                        Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                        Uri.fromParts("package", packageName, null)
+                                    )
+                                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                    startActivity(intent)
+                                },
+                            )
+                        }
+                        // FloatingActionButton / Toolbar for adding new photos
+                        val scope = rememberCoroutineScope()
+                        val selectedCount = selectedPhotoIds.size
+                        LaunchedEffect(selectedCount > 0) {
+                            addMode = if (selectedCount > 0) AddNone else AddFab
+                        }
+                        // Use ACTION_OPEN_DOCUMENT by default for adding photos.
+                        // This allows us to use persistent URI permissions to access the
+                        // underlying photos meaning we don't need to use additional storage
+                        // space and will pull in edits automatically in addition to syncing
+                        // deletions.
+                        //
+                        // (There's a separate 'Import photos' option which uses
+                        // ACTION_GET_CONTENT to support legacy apps)
+                        val choosePhotos = rememberLauncherForActivityResult(
+                            ChoosePhotos()
+                        ) { photos ->
+                            processSelectedUris(photos)
+                            addMode = AddFab
+                        }
+                        val addPhotoErrorTitle = stringResource(R.string.gallery_add_photos_error)
+                        val chooseFolder = rememberLauncherForActivityResult(
+                            ChooseFolder()
+                        ) { folder ->
+                            if (folder != null) {
+                                getSharedPreferences(SHARED_PREF_NAME, MODE_PRIVATE).edit {
+                                    putBoolean(SHOW_INTERNAL_STORAGE_MESSAGE, false)
+                                }
+                            }
+                            processSelectedUris(listOfNotNull(folder))
+                            addMode = AddFab
+                        }
+                        val addFolderErrorTitle = stringResource(R.string.gallery_add_folder_error)
+                        GalleryAdd(
+                            mode = addMode,
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .padding(
+                                    WindowInsets.safeDrawing
+                                        .only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom)
+                                        .asPaddingValues()
+                                ),
+                            onToggleToolbar = {
+                                addMode = when (addMode) {
+                                    AddFab -> AddToolbar
+                                    AddToolbar -> AddFab
+                                    AddNone -> AddFab
+                                }
+                            },
+                            onAddPhoto = {
+                                try {
+                                    choosePhotos.launch()
+                                } catch (_: ActivityNotFoundException) {
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar(
+                                            message = addPhotoErrorTitle,
+                                            duration = SnackbarDuration.Long
+                                        )
+                                    }
+                                    addMode = AddFab
+                                }
+                            },
+                            onAddFolder = {
+                                try {
+                                    chooseFolder.launch()
+                                    val preferences =
+                                        getSharedPreferences(SHARED_PREF_NAME, MODE_PRIVATE)
+                                    if (preferences.getBoolean(
+                                            SHOW_INTERNAL_STORAGE_MESSAGE,
+                                            true
+                                        )
+                                    ) {
+                                        toast(
+                                            R.string.gallery_internal_storage_message,
+                                            Toast.LENGTH_LONG
+                                        )
+                                    }
+                                } catch (_: ActivityNotFoundException) {
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar(
+                                            message = addFolderErrorTitle,
+                                            duration = SnackbarDuration.Long
+                                        )
+                                    }
+                                    addMode = AddFab
+                                }
+                            }
+                        )
+                    }
+                }
+            }
+        }
+        GalleryScanWorker.enqueueRescan(this)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Permissions might have changed in the background
+        onDataSetChanged()
+    }
+
+    private fun getDisplayNameForTreeUri(treeUri: Uri): String? {
+        val documentUri = DocumentsContract.buildDocumentUriUsingTree(treeUri,
+                DocumentsContract.getTreeDocumentId(treeUri))
+        try {
+            contentResolver.query(documentUri,
+                    arrayOf(DocumentsContract.Document.COLUMN_DISPLAY_NAME),
+                    null, null, null)?.use { data ->
+                if (data.moveToNext()) {
+                    return data.getStringOrNull(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
+                }
+            }
+        } catch (_: SecurityException) {
+            // No longer can read this URI, which means no display name for this URI
+        }
+        return null
+    }
+
+    private fun onDataSetChanged() {
+        if (chosenPhotosCount.intValue != 0) {
+            // We have at least one image, so consider the Gallery source properly setup
+            setResult(RESULT_OK)
+        } else {
+            // No chosen images
+            val newState = checkRequestPermissionState(this)
+            when (newState) {
+                is PartialPermissionGranted -> {
+                    // Only a partial grant is done, which means we can scan for the images
+                    // we have, but should offer the ability for users to reselect what images
+                    // they want us to have access to
+                    GalleryScanWorker.enqueueRescan(this)
+                    setResult(RESULT_OK)
+                }
+
+                PermissionGranted -> {
+                    // Permission is granted, we can show the random camera photos image
+                    GalleryScanWorker.enqueueRescan(this)
+                    setResult(RESULT_OK)
+                }
+
+                is PermissionDenied -> {
+                    // We have no images until they enable the permission
+                    setResult(RESULT_CANCELED)
+                }
+            }
+            permissionStateFlow.value = newState
+        }
+    }
+
+    private fun getImagesFromTreeUri(treeUri: Uri, maxImages: Int): List<Uri> {
+        val images = ArrayList<Uri>()
+        val directories = LinkedList<String>()
+        directories.add(DocumentsContract.getTreeDocumentId(treeUri))
+        while (images.size < maxImages && !directories.isEmpty()) {
+            val parentDocumentId = directories.poll()
+            val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(treeUri,
+                    parentDocumentId)
+            try {
+                contentResolver.query(childrenUri,
+                        arrayOf(DocumentsContract.Document.COLUMN_DOCUMENT_ID, DocumentsContract.Document.COLUMN_MIME_TYPE),
+                        null, null, null)?.use { children ->
+                    while (children.moveToNext()) {
+                        val documentId = children.getString(
+                                DocumentsContract.Document.COLUMN_DOCUMENT_ID)
+                        val mimeType = children.getString(
+                                DocumentsContract.Document.COLUMN_MIME_TYPE)
+                        if (DocumentsContract.Document.MIME_TYPE_DIR == mimeType) {
+                            directories.add(documentId)
+                        } else if (mimeType.startsWith("image/")) {
+                            // Add images to the list
+                            images.add(DocumentsContract.buildDocumentUriUsingTree(treeUri, documentId))
+                        }
+                        if (images.size == maxImages) {
+                            break
+                        }
+                    }
+                }
+            } catch (_: SecurityException) {
+                // No longer can read this URI, which means no children from this URI
+            } catch (e: Exception) {
+                // Could be anything: NullPointerException, IllegalArgumentException, etc.
+                Log.i(TAG, "Unable to load images from $treeUri", e)
+            }
+        }
+        return images
+    }
+
+    private fun processSelectedUris(uris: List<Uri>) {
+        if (uris.isEmpty()) {
+            // Nothing to do, so we can avoid posting the runnable at all
+            return
+        }
+        // Update chosen URIs
+        lifecycleScope.launch {
+            withContext(NonCancellable) {
+                GalleryDatabase.getInstance(this@GallerySettingsActivity)
+                    .chosenPhotoDao()
+                    .insertAll(this@GallerySettingsActivity, uris)
+            }
+        }
+    }
+}

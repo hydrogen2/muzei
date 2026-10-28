@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 apply plugin: 'com.android.application'
-apply plugin: 'kotlin-android'
 
 dependencies {
     implementation libs.activity
@@ -35,8 +36,12 @@ android {
     namespace 'com.example.muzei.unsplash'
     compileSdk libs.versions.compileSdk.get().toInteger()
 
+    buildFeatures {
+        buildConfig true
+    }
+
     defaultConfig {
-        minSdkVersion 19
+        minSdkVersion 24
         targetSdkVersion libs.versions.targetSdk.get()
 
         versionName '1.0.0'
@@ -47,7 +52,13 @@ android {
         buildConfigField "String", "UNSPLASH_AUTHORITY", "\"${unsplashAuthorityValue}\""
     }
 
-    kotlinOptions {
-        jvmTarget = '1.8'
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_11)
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
     }
 }

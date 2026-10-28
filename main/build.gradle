@@ -14,14 +14,16 @@
  * limitations under the License.
  */
 
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 apply plugin: 'com.android.application'
-apply plugin: 'kotlin-android'
+apply plugin: 'org.jetbrains.kotlin.plugin.compose'
 apply plugin: 'com.google.gms.google-services'
 apply plugin: 'com.google.firebase.crashlytics'
 apply plugin: 'com.google.firebase.firebase-perf'
 apply plugin: 'androidx.navigation.safeargs.kotlin'
 
-project.archivesBaseName = "muzei"
+base { archivesName = "muzei" }
 
 android {
     namespace 'net.nurik.roman.muzei'
@@ -31,19 +33,18 @@ android {
     versionProps.load(new FileInputStream(file('../version.properties')))
 
     buildFeatures {
+        buildConfig true
         viewBinding true
+        compose true
     }
 
     defaultConfig {
         applicationId "net.nurik.roman.muzei"
-        minSdkVersion 21
+        minSdkVersion 24
         targetSdkVersion libs.versions.targetSdk.get()
 
         versionName versionProps['name']
         versionCode versionProps['code'].toInteger()
-
-        multiDexEnabled true
-        wearAppUnbundled true
 
         buildConfigField "String", "DEVICE_TYPE", "\"android\""
     }
@@ -74,7 +75,7 @@ android {
         release {
             minifyEnabled true
             shrinkResources true
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), file('proguard-project.txt')
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), file('proguard-project.txt')
             signingConfig signingConfigs.release
         }
 
@@ -86,14 +87,19 @@ android {
         publicDebug.initWith(buildTypes.publicBeta)
         publicDebug {
             debuggable true
-            renderscriptDebuggable true
             versionNameSuffix " Debug " + versionProps['betaNumber']
         }
     }
 
-    kotlinOptions {
-        jvmTarget = '1.8'
-        freeCompilerArgs += "-opt-in=kotlin.RequiresOptIn"
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_11)
+            freeCompilerArgs.add("-opt-in=kotlin.RequiresOptIn")
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
     }
 }
 
@@ -101,22 +107,29 @@ dependencies {
     api libs.coroutines.core
     api libs.coroutines.android
     api libs.coroutines.playservices
-    implementation libs.multidex
-    implementation libs.coil
+    implementation libs.coil.compose
+    implementation libs.coil.runtime
+    implementation libs.coil.okhttp
     implementation libs.wearable.playservices
     implementation libs.tasker
-    implementation libs.subsampling
+    implementation libs.telephoto
+    implementation libs.activity
     implementation libs.core
+    implementation platform(libs.compose.bom)
+    implementation libs.compose.animation.graphics
+    implementation libs.compose.icons
+    implementation libs.compose.livedata
+    implementation libs.compose.material3
+    implementation libs.compose.ui.tooling.preview
+    debugImplementation libs.compose.ui.tooling.runtime
     implementation libs.fragment
     implementation libs.appCompat
-    implementation libs.drawerLayout
+    implementation libs.lifecycle.runtime
+    implementation libs.lifecycle.viewmodel
     implementation libs.recyclerView
-    implementation libs.swipeRefreshLayout
-    implementation libs.viewPager2
     implementation libs.material
     implementation libs.browser
     implementation libs.exifInterface
-    implementation libs.constraintLayout
     implementation libs.lifecycle.livedata
     implementation libs.lifecycle.common
     implementation libs.preference
@@ -125,7 +138,6 @@ dependencies {
 
     implementation project(':muzei-api')
     implementation project(':extensions')
-    implementation project(':legacy-common')
     implementation project(':android-client-common')
     implementation project(':source-featured-art')
     implementation project(':source-gallery')

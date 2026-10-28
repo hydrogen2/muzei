@@ -42,23 +42,21 @@ class ImageBlurrer(context: Context, private val sourceBitmap: Bitmap?) {
     }
 
     private val renderScript: RenderScript = RenderScript.create(context)
-    private val scriptIntrinsicBlur: ScriptIntrinsicBlur
-    private val scriptIntrinsicGrey: ScriptIntrinsicColorMatrix
-    private val allocationSrc: Allocation?
-
-    init {
-        scriptIntrinsicBlur = ScriptIntrinsicBlur.create(renderScript, Element.U8_4(renderScript))
-        scriptIntrinsicGrey = ScriptIntrinsicColorMatrix.create(renderScript)
-        allocationSrc = if (sourceBitmap != null) Allocation.createFromBitmap(renderScript, sourceBitmap) else null
-    }
+    private val scriptIntrinsicBlur: ScriptIntrinsicBlur =
+        ScriptIntrinsicBlur.create(renderScript, Element.U8_4(renderScript))
+    private val scriptIntrinsicGrey: ScriptIntrinsicColorMatrix =
+        ScriptIntrinsicColorMatrix.create(renderScript)
+    private val allocationSrc: Allocation? =
+        if (sourceBitmap != null) Allocation.createFromBitmap(renderScript, sourceBitmap) else null
 
     @JvmOverloads
     fun blurBitmap(radius: Float = MAX_SUPPORTED_BLUR_PIXELS.toFloat(), desaturateAmount: Float = 0f): Bitmap? {
-        if (sourceBitmap == null || allocationSrc == null) {
+        val config = sourceBitmap?.config
+        if (sourceBitmap == null || config == null || allocationSrc == null) {
             return null
         }
 
-        val dest = sourceBitmap.copy(sourceBitmap.config, true)
+        val dest = sourceBitmap.copy(config, true)
         if (radius == 0f && desaturateAmount == 0f) {
             return dest
         }

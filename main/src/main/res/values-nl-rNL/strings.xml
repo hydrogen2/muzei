@@ -35,6 +35,10 @@
     <string name="auto_advance_title">Automatisch verdergaan</string>
     <string name="auto_advance_description">Controleer wanneer <xliff:g id="muzei_name">Muzei</xliff:g> automatisch verdergaat naar de volgende achtergrond.</string>
     <string name="auto_advance_wifi">Enkel automatisch verdergaan bij Wi-Fi</string>
+    <string name="auto_advance_ordering">Sorteren</string>
+    <string name="auto_advance_ordering_in_order">Automatisch gesorteerd</string>
+    <string name="auto_advance_ordering_new_in_order">Nieuwe afbeeldingen op volgorde, daarna willekeurig</string>
+    <string name="auto_advance_ordering_random">Altijd willekeurig</string>
     <string name="auto_advance_interval">Interval</string>
     <string name="auto_advance_interval_15m">Elk kwartier</string>
     <string name="auto_advance_interval_30m">Elk halfuur</string>
@@ -59,26 +63,9 @@
     <string name="action_artwork_info_disabled">Er is geen informatie voor het huidige kunstwerk.</string>
     <string name="provider_settings">Instellingen</string>
     <string name="provider_browse">Bladeren</string>
-    <string name="legacy_notification_channel_name">Verouderde bronnen</string>
-    <string name="legacy_notification_title"><xliff:g id="source_name" example="Nice Wallpapers">%s</xliff:g> wordt niet meer ondersteund</string>
-    <string name="legacy_notification_text"><xliff:g id="muzei_name">Muzei</xliff:g> ondersteunt bronnen die de verouderde bronnen-API gebruiken niet rechtstreeks.</string>
-    <string name="legacy_action_learn_more">Meer informatie</string>
-    <string name="legacy_action_send_feedback">Feedback sturen</string>
-    <string name="legacy_summary_title">Verouderde bronnen worden niet meer ondersteund</string>
-    <plurals name="legacy_summary_text">
-        <item quantity="one"><xliff:g id="quantity" example="1">%1$d</xliff:g> verouderde bron gevonden</item>
-        <item quantity="other"><xliff:g id="quantity" example="2">%1$d</xliff:g> verouderde bronnen gevonden</item>
-    </plurals>
-    <plurals name="legacy_unsupported_text">
-        <item quantity="one"><xliff:g id="quantity" example="1">%1$d</xliff:g> niet-ondersteunde bron gevonden</item>
-        <item quantity="other"><xliff:g id="quantity" example="2">%1$d</xliff:g> niet-ondersteunde bronnen gevonden</item>
-    </plurals>
-    <string name="legacy_source_info_title">Verouderde bronnen</string>
-    <string name="legacy_source_info_subtitle">Bronnen die de verouderde bronnen-API gebruiken worden niet meer rechtstreeks ondersteund door <xliff:g id="muzei_name">Muzei</xliff:g>.</string>
-    <string name="legacy_source_info_app_info">App-info</string>
-    <string name="legacy_source_info_send_feedback">Feedback sturen</string>
-    <string name="legacy_source_all_uninstalled">Alle verouderde bronnen zijn verwijderd</string>
     <string name="done">Klaar</string>
+    <string name="navigate_up">Ga terug</string>
+    <string name="menu_overflow">Meer opties</string>
     <string name="set_as_wallpaper_using_muzei">Achtergrond (gebruikt <xliff:g id="muzei_name">Muzei</xliff:g>)</string>
     <string name="set_as_wallpaper_failed">Kon kunstwerk niet lezen</string>
     <string name="tutorial_main">Open de app <xliff:g id="muzei_name">Muzei</xliff:g> om uw achtergrond te bekijken</string>

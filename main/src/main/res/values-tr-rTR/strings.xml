@@ -33,7 +33,7 @@
     <string name="auto_advance_disabled">Otomatik Geçiş kapalı</string>
     <string name="auto_advance_disabled_description">Eski Kaynaklar kendi başlarına duvar kağıdı yükleniyor ve Otomatik İlerlemeyi desteklemiyor</string>
     <string name="auto_advance_title">Otomatik Geçiş</string>
-    <string name="auto_advance_description"><xliff:g id="muzei_name">Muzei</xliff:g>\'nin ne zaman bir sonraki arkaplana geçiş yapacağını belirle.</string>
+    <string name="auto_advance_description"><xliff:g id="muzei_name">Muzei</xliff:g>\'nin ne zaman bir sonraki duvar kağıdına geçiş yapacağını belirle.</string>
     <string name="auto_advance_wifi">Sadece Wi-Fi bağlı iken</string>
     <string name="auto_advance_interval">Aralık</string>
     <string name="auto_advance_interval_15m">Her 15 dakikada</string>
@@ -44,11 +44,8 @@
     <string name="auto_advance_interval_24h">Her 24 saatte</string>
     <string name="auto_advance_interval_72h">Her 3 günde</string>
     <string name="auto_advance_interval_never">Otomatik geçme</string>
-    <string name="auto_advance_tasker">Duvar kağıdınızı neyin tetiklediğini tam olarak kontrol etmek için
-         değiştirmek için şu sayfada bulunan \'Sonraki resim\' eylemini kullanın
-         Eklenti altında <xliff:g id="tasker_name">kılıf</xliff:g> -&gt;
-         <xliff:g id="muzei_name">Muzei</xliff:g> ve burada otomatik ilerlemeyi devre dışı bırak.</string>
-    <string name="auto_advance_tasker_name"><xliff:g id="tasker_name">kılıf</xliff:g></string>
+    <string name="auto_advance_tasker">Duvar kağıdınızın değişmesini neyin tetiklediğini tam olarak kontrol etmek için, &lt;xliff:g id="muzei_name"&gt;Muzei&lt;/xliff:g&gt; eklentisini &lt;xliff:g &gt; &lt;xliff:g id="muzei_name"&gt;Muzei&lt;/xliff:g&gt;\'da bulunan \'Sonraki resim\' eylemini kullanın ve otomatik geçişi kapatın.</string>
+    <string name="auto_advance_tasker_name"><xliff:g id="tasker_name">Tasker</xliff:g></string>
     <string name="action_activate">Etkinleştir</string>
     <string name="error_view_details">Sanat eseri detayları görüntülenemiyor.</string>
     <string name="error_wallpaper_chooser">Arkaplan seçici başlatılamadı. Ana ekranda canlı arkaplan menüsünü seçerek, <xliff:g id="muzei_name">Muzei</xliff:g>\'yi aktifleştirebilirsiniz.</string>
@@ -61,41 +58,20 @@
     <string name="action_artwork_info">Sanart eseri bilgileri</string>
     <string name="action_artwork_info_disabled">Geçerli resim için resim bilgisi yok.</string>
     <string name="provider_settings">Ayarlar</string>
-    <string name="provider_browse">Araştır</string>
-    <string name="legacy_notification_channel_name">Eski bilgiler</string>
-    <string name="legacy_notification_title"><xliff:g id="source_name" example="Güzel Duvar Kağıtları">%s</xliff:g>
-         artık desteklenmiyor</string>
-    <string name="legacy_notification_text"><xliff:g id="muzei_name">Muzei</xliff:g> Eski Kaynak API\'si ile oluşturulan kaynakları doğrudan desteklemez.</string>
-    <string name="legacy_action_learn_more">Daha fazla bilgi edin</string>
-    <string name="legacy_action_send_feedback">Geri bildirim gönder</string>
-    <string name="legacy_summary_title">Eski kaynaklar artık desteklenmiyor</string>
-    <plurals name="legacy_summary_text">
-        <item quantity="one"><xliff:g id="quantity" example="1">%1$d</xliff:g> Eski kaynaklar bulundu</item>
-        <item quantity="other"><xliff:g id="quantity" example="2">%1$d</xliff:g> Eski kaynak bulundu</item>
-    </plurals>
-    <plurals name="legacy_unsupported_text">
-        <item quantity="one"><xliff:g id="quantity" example="1">%1$d</xliff:g> desteklenmeyen kaynak bulundu</item>
-        <item quantity="other"><xliff:g id="quantity" example="1">%1$d</xliff:g>
-desteklenmeyen kaynak bulundu</item>
-    </plurals>
-    <string name="legacy_source_info_title">Eski Kaynaklar</string>
-    <string name="legacy_source_info_subtitle">Eski Kaynak API\'si ile oluşturulan kaynaklar artık doğrudan <xliff:g id="muzei_name">Muzei</xliff:g> tarafından desteklenmiyor.</string>
-    <string name="legacy_source_info_app_info">Uygulama bilgisi</string>
-    <string name="legacy_source_info_send_feedback">Geri bildirim yolla</string>
-    <string name="legacy_source_all_uninstalled">Tüm Eski Kaynaklar kaldırıldı</string>
+    <string name="provider_browse">Göz at</string>
     <string name="done">Bitti</string>
     <string name="set_as_wallpaper_using_muzei">Duvar Kağıdı (<xliff:g id="muzei_name">Muzei</xliff:g> kullanarak)</string>
     <string name="set_as_wallpaper_failed">Resim okunamıyor</string>
     <string name="tutorial_main">Duvar kağınızı görmek için <xliff:g id="muzei_name">Muzei</xliff:g> uygulamasını açın</string>
     <string name="tutorial_subtitle">Geçici olarak odaklanmak için ana ekranınızdaki bulanık duvar kağıdına iki kez dokunun</string>
     <string name="get_more_sources">Daha fazla kaynak al</string>
-    <string name="get_more_sources_description">Ek duvar kağıdıyla duvar kağıdınızı tamamen değiştirin. Yüklenen kaynaklar <xliff:g id="google_play">Google Play</xliff:g>mağaza</string>
+    <string name="get_more_sources_description">Duvar kağıdınızı <xliff:g id="google_play">Google Play</xliff:g> Store\'da yüklenmiş ek kaynaklar ile tamamen değiştirin</string>
     <string name="action_link_effects">Anasayfa 🔗 Kilit</string>
     <string name="toast_link_effects">Anasayfa &amp; Kilitle ekran efektleri artık bağlı</string>
     <string name="action_link_effects_off">Ana &amp; kilit ekranları birbirine bağlı değil</string>
     <string name="toast_link_effects_off">Anasayfa &amp; kilit ekran efektleri artık bağlı değil</string>
     <string name="reset_advanced_settings_defaults">Ayarları sıfırla</string>
-    <string name="play_store_not_found"><xliff:g id="google_play">Google Play</xliff:g> mağaza.</string>
+    <string name="play_store_not_found"><xliff:g id="google_play">Google Play</xliff:g> Store açılamadı.</string>
     <string name="browse_refresh">Yenile</string>
     <string name="browse_set_wallpaper">Geçerli duvar kağıdını ayarla</string>
     <string name="browse_set_wallpaper_with_title">Geçerli duvar kağıtları \"<xliff:g id="image_name" example="IMG14227.jpg">%s</xliff:g>\" olarak ayarla</string>

@@ -21,21 +21,22 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Binder
-import android.os.Build
 import android.provider.DocumentsContract
 import android.util.Log
-import androidx.lifecycle.LiveData
 import androidx.paging.PagingSource
-import androidx.room.Dao
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.Query
-import androidx.room.Transaction
+import androidx.room3.Dao
+import androidx.room3.DaoReturnTypeConverters
+import androidx.room3.Insert
+import androidx.room3.OnConflictStrategy
+import androidx.room3.Query
+import androidx.room3.Transaction
+import androidx.room3.paging.PagingSourceDaoReturnTypeConverter
 import com.google.android.apps.muzei.api.provider.ProviderContract
 import com.google.android.apps.muzei.gallery.BuildConfig.GALLERY_ART_AUTHORITY
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.Flow
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -45,17 +46,18 @@ import java.util.Date
  * Dao for [ChosenPhoto]
  */
 @Dao
+@DaoReturnTypeConverters(PagingSourceDaoReturnTypeConverter::class)
 internal abstract class ChosenPhotoDao {
 
     companion object {
         private const val TAG = "ChosenPhotoDao"
     }
 
-    @get:Query("SELECT * FROM chosen_photos ORDER BY _id DESC")
-    internal abstract val chosenPhotosPaged: PagingSource<Int, ChosenPhoto>
+    @Query("SELECT * FROM chosen_photos ORDER BY _id DESC")
+    internal abstract fun getChosenPhotosPaged(): PagingSource<Int, ChosenPhoto>
 
     @get:Query("SELECT * FROM chosen_photos ORDER BY _id DESC")
-    internal abstract val chosenPhotosLiveData: LiveData<List<ChosenPhoto>>
+    internal abstract val chosenPhotosFlow: Flow<List<ChosenPhoto>>
 
     @get:Query("SELECT * FROM chosen_photos ORDER BY _id DESC")
     internal abstract val chosenPhotosBlocking: List<ChosenPhoto>
@@ -97,12 +99,12 @@ internal abstract class ChosenPhotoDao {
     }
 
     private fun persistUriAccess(context: Context, chosenPhoto: ChosenPhoto): Boolean {
-        chosenPhoto.isTreeUri = isTreeUri(chosenPhoto.uri)
+        chosenPhoto.isTreeUri = DocumentsContract.isTreeUri(chosenPhoto.uri)
         if (chosenPhoto.isTreeUri) {
             try {
                 context.contentResolver.takePersistableUriPermission(chosenPhoto.uri,
                         Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            } catch (ignored: SecurityException) {
+            } catch (_: SecurityException) {
                 // You can't persist URI permissions from your own app, so this fails.
                 // We'll still have access to it directly
             }
@@ -128,7 +130,7 @@ internal abstract class ChosenPhotoDao {
                                 Log.w(TAG, "Unable to delete $cachedFile")
                             }
                         }
-                    } catch (ignored: SecurityException) {
+                    } catch (_: SecurityException) {
                         // If we don't have FLAG_GRANT_PERSISTABLE_URI_PERMISSION (such as when using ACTION_GET_CONTENT),
                         // this will fail. We'll need to make a local copy (handled below)
                     }
@@ -146,26 +148,6 @@ internal abstract class ChosenPhotoDao {
             }
         }
         return true
-    }
-
-    private fun isTreeUri(possibleTreeUri: Uri): Boolean {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            return DocumentsContract.isTreeUri(possibleTreeUri)
-        } else {
-            try {
-                // Prior to N we can't directly check if the URI is a tree URI, so we have to just try it
-                val treeDocumentId = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                    DocumentsContract.getTreeDocumentId(possibleTreeUri)
-                } else {
-                    // No tree URIs prior to Lollipop
-                    return false
-                }
-                return treeDocumentId?.isNotEmpty() == true
-            } catch (e: IllegalArgumentException) {
-                // Definitely not a tree URI
-                return false
-            }
-        }
     }
 
     @Throws(IOException::class)
@@ -247,7 +229,7 @@ internal abstract class ChosenPhotoDao {
                                 try {
                                     contentResolver.releasePersistableUriPermission(
                                             uriToRelease, Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                } catch (e: SecurityException) {
+                                } catch (_: SecurityException) {
                                     // Thrown if we don't have permission...despite in being in
                                     // the getPersistedUriPermissions(). Alright then.
                                 }

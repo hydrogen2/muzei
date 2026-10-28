@@ -14,13 +14,19 @@
   limitations under the License.
   -->
 
-<manifest
-    xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32"/>
     <uses-permission-sdk-23 android:name="android.permission.READ_MEDIA_IMAGES"/>
     <uses-permission android:name="android.permission.ACCESS_MEDIA_LOCATION"/>
+    <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" />
+
+    <!-- Remove unused foreground service permission auto-added by WorkManager -->
+    <uses-permission
+        android:name="android.permission.FOREGROUND_SERVICE"
+        tools:node="remove" />
 
     <queries>
         <!-- Used to find the set of apps still only supporting GET_CONTENT -->
@@ -50,7 +56,7 @@
 
             <meta-data
                 android:name="settingsActivity"
-                android:value="com.google.android.apps.muzei.gallery.GallerySettingsActivity" />
+                android:value="com.google.android.apps.muzei.gallery.settings.GallerySettingsActivity" />
             <meta-data
                 android:name="setupActivity"
                 android:value="com.google.android.apps.muzei.gallery.GallerySetupActivity" />
@@ -78,17 +84,22 @@
 
         <activity
             android:name="com.google.android.apps.muzei.gallery.GallerySetupActivity"
+            android:configChanges="assetsPaths|colorMode|density|fontScale|fontWeightAdjustment|grammaticalGender|keyboard|keyboardHidden|layoutDirection|locale|mcc|mnc|navigation|orientation|resourcesUnused|screenLayout|screenSize|smallestScreenSize|touchscreen|uiMode"
             android:label="@string/gallery_title"
             android:theme="@android:style/Theme.Translucent.NoTitleBar"
             android:exported="true"/>
 
         <activity
-            android:name="com.google.android.apps.muzei.gallery.GallerySettingsActivity"
+            android:name="com.google.android.apps.muzei.gallery.settings.GallerySettingsActivity"
+            android:configChanges="assetsPaths|colorMode|density|fontScale|fontWeightAdjustment|grammaticalGender|keyboard|keyboardHidden|layoutDirection|locale|mcc|mnc|navigation|orientation|resourcesUnused|screenLayout|screenSize|smallestScreenSize|touchscreen|uiMode"
+            android:enableOnBackInvokedCallback="true"
             android:label="@string/gallery_title"
-            android:theme="@style/Theme.Gallery"/>
+            android:theme="@style/Theme.Gallery"
+            tools:targetApi="33" />
 
         <activity
             android:name="com.google.android.apps.muzei.gallery.GalleryAddPhotosActivity"
+            android:configChanges="assetsPaths|colorMode|density|fontScale|fontWeightAdjustment|grammaticalGender|keyboard|keyboardHidden|layoutDirection|locale|mcc|mnc|navigation|orientation|resourcesUnused|screenLayout|screenSize|smallestScreenSize|touchscreen|uiMode"
             android:label="@string/gallery_title"
             android:theme="@android:style/Theme.Translucent.NoTitleBar"
             android:exported="true">

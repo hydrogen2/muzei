@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 apply plugin: 'com.android.library'
-apply plugin: 'kotlin-android'
 
 dependencies {
     api libs.coroutines.core
@@ -36,8 +37,12 @@ android {
 
     compileSdk libs.versions.compileSdk.get().toInteger()
 
+    buildFeatures {
+        buildConfig true
+    }
+
     defaultConfig {
-        minSdkVersion 19
+        minSdkVersion 24
         targetSdkVersion libs.versions.targetSdk.get()
 
         def featuredArtAuthorityValue = "com.google.android.apps.muzei.featuredart"
@@ -50,7 +55,13 @@ android {
         publicDebug
     }
 
-    kotlinOptions {
-        jvmTarget = '1.8'
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_11)
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
     }
 }

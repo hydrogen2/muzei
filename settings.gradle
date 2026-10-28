@@ -4,11 +4,12 @@ pluginManagement {
         gradlePluginPortal()
     }
 }
+plugins {
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
+}
 
 include ':muzei-api'
 include ':extensions'
-include ':legacy-common'
-include ':legacy-standalone'
 include ':android-client-common'
 include ':source-featured-art'
 include ':source-gallery'
@@ -17,4 +18,3 @@ include ':gl-wallpaper'
 include ':main'
 include ':wearable'
 include ':example-unsplash'
-include ':example-watchface'

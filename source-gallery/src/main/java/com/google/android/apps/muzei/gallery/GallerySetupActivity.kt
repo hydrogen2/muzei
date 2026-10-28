@@ -17,12 +17,14 @@
 package com.google.android.apps.muzei.gallery
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import androidx.activity.ComponentActivity
 import androidx.activity.result.component1
 import androidx.activity.result.component2
 import androidx.activity.result.contract.ActivityResultContract
@@ -31,10 +33,16 @@ import androidx.activity.result.contract.ActivityResultContracts.StartActivityFo
 import androidx.activity.result.launch
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.fragment.app.FragmentActivity
+import androidx.core.view.WindowCompat
 import com.google.android.apps.muzei.api.provider.MuzeiArtProvider
+import com.google.android.apps.muzei.gallery.settings.GallerySettingsActivity
+import com.google.android.apps.muzei.util.collectIn
 
-private val permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+private val permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+    arrayOf(Manifest.permission.READ_MEDIA_IMAGES,
+        Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED,
+        Manifest.permission.ACCESS_MEDIA_LOCATION)
+} else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
     arrayOf(Manifest.permission.READ_MEDIA_IMAGES,
         Manifest.permission.ACCESS_MEDIA_LOCATION)
 } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -47,11 +55,20 @@ internal class RequestStoragePermissions : ActivityResultContract<Unit, Boolean>
     companion object {
         fun checkSelfPermission(context: Context) = permissions.map { permission ->
             ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
-        }.all { it }
+        }.any { it }
+
+        @SuppressLint("InlinedApi")
+        fun isPartialGrant(context: Context) = ContextCompat.checkSelfPermission(context,
+            Manifest.permission.READ_MEDIA_IMAGES
+        ) != PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(context,
+            Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED
+        ) == PackageManager.PERMISSION_GRANTED
 
         fun shouldShowRequestPermissionRationale(
             activity: Activity
-        ) = ActivityCompat.shouldShowRequestPermissionRationale(activity, permissions.first())
+        ) = permissions.map { permission ->
+            ActivityCompat.shouldShowRequestPermissionRationale(activity, permission)
+        }.any { it }
     }
 
     private val requestMultiplePermissions = RequestMultiplePermissions()
@@ -63,27 +80,26 @@ internal class RequestStoragePermissions : ActivityResultContract<Unit, Boolean>
             context: Context,
             input: Unit
     ) = requestMultiplePermissions.getSynchronousResult(context, permissions)?.let { result ->
-        SynchronousResult(result.value.all { it.value })
+        SynchronousResult(result.value.any { it.value })
     }
 
     override fun parseResult(
             resultCode: Int,
             intent: Intent?
     ): Boolean = requestMultiplePermissions.parseResult(resultCode, intent).let { result ->
-        result.all { it.value }
+        result.any { it.value }
     }
 }
 
-class GallerySetupActivity : FragmentActivity() {
+class GallerySetupActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        WindowCompat.enableEdgeToEdge(window)
         GalleryDatabase.getInstance(this).chosenPhotoDao()
-                .chosenPhotosLiveData.observe(this) { chosenUris ->
+                .chosenPhotosFlow.collectIn(this) { chosenUris ->
             val numChosenUris = chosenUris.size
-            val hasPermission = permissions.all { permission ->
-                ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
-            }
+            val hasPermission = RequestStoragePermissions.checkSelfPermission(this)
             if (hasPermission || numChosenUris > 0) {
                 // If we have permission or have any previously selected images
                 setResult(RESULT_OK)

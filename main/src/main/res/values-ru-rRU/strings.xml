@@ -25,16 +25,16 @@
     <string name="notification_new_wallpaper">Новые обои</string>
     <string name="notification_new_wallpaper_channel_name">Новые обои</string>
     <string name="notification_settings">Настройки уведомлений</string>
-    <string name="notification_settings_failed">Не удалось открыть настройки уведомлений, пожалуйста, измените настройки уведомлений <xliff:g id="muzei_name">Muzei</xliff:g>в приложении настоек.</string>
+    <string name="notification_settings_failed">Не удалось открыть настройки уведомлений. Пожалуйста, измените настройки уведомлений <xliff:g id="muzei_name">Muzei</xliff:g> в настройках приложений Android.</string>
     <string name="notification_settings_done">Готово</string>
     <string name="notification_settings_moved_title">Настройки уведомлений переехали</string>
     <string name="notification_settings_moved_text">Просмотрите свои настройки уведомлений</string>
     <string name="auto_advance_settings">Настройки автоматического перехода</string>
-    <string name="auto_advance_disabled">Автопереход отключён</string>
-    <string name="auto_advance_disabled_description">Устаревшие источники самостоятельно загружают обои и не поддерживают автопереход</string>
-    <string name="auto_advance_title">Автопереход</string>
-    <string name="auto_advance_description">Управлять, когда <xliff:g id="muzei_name">Muzei</xliff:g> автоматически переходит к следующим обоям.</string>
-    <string name="auto_advance_wifi">Автопереход только по Wi-Fi</string>
+    <string name="auto_advance_disabled">Автоматический переход отключён</string>
+    <string name="auto_advance_disabled_description">Устаревшие источники самостоятельно загружают обои и не поддерживают автоматический переход</string>
+    <string name="auto_advance_title">Автоматический переход</string>
+    <string name="auto_advance_description">Задайте интервал, через который <xliff:g id="muzei_name">Muzei</xliff:g> автоматически переходит к следующим обоям.</string>
+    <string name="auto_advance_wifi">Автоматический переход только по Wi-Fi</string>
     <string name="auto_advance_interval">Интервал</string>
     <string name="auto_advance_interval_15m">Каждые 15 минут</string>
     <string name="auto_advance_interval_30m">Каждые 30 минут</string>
@@ -45,4 +45,68 @@
     <string name="auto_advance_interval_72h">Каждые 3 дня</string>
     <string name="auto_advance_interval_never">Не переходить автоматически</string>
     <string name="auto_advance_tasker">Для точного контроля над тем, что вызывает изменения ваших обоев, используйте действие \'Следующая работа\' в <xliff:g id="tasker_name">Tasker</xliff:g> под Plugin -&gt; <xliff:g id="muzei_name">Muzei</xliff:g> и отключите автоматический переход здесь.</string>
+    <string name="auto_advance_tasker_name"><xliff:g id="tasker_name">Tasker</xliff:g></string>
+    <string name="action_activate">Активировать</string>
+    <string name="error_view_details">Не удалось отобразить информацию о рисунке.</string>
+    <string name="error_wallpaper_chooser">Не удалось запустить выбор обоев. Вы все ещё можете активировать <xliff:g id="muzei_name">Muzei</xliff:g>, выбрав \'Живые обои\' в списке обоев вашего домашнего экрана.</string>
+    <string name="section_choose_source">Источники</string>
+    <string name="section_effects">Эффекты</string>
+    <string name="action_next_artwork">Следующий рисунок</string>
+    <string name="action_next_artwork_condensed">Следующий</string>
+    <string name="action_user_command">Ещё</string>
+    <string name="action_user_command_prompt">Выберите действие</string>
+    <string name="action_artwork_info">Информация о рисунке</string>
+    <string name="action_artwork_info_disabled">Нет информации о текущем рисунке.</string>
+    <string name="provider_settings">Настройки</string>
+    <string name="provider_browse">Обзор</string>
+    <string name="done">Готово</string>
+    <string name="set_as_wallpaper_using_muzei">Обои (из <xliff:g id="muzei_name">Muzei</xliff:g>)</string>
+    <string name="set_as_wallpaper_failed">Не удалось отобразить рисунок</string>
+    <string name="tutorial_main">Откройте <xliff:g id="muzei_name">Muzei</xliff:g> для просмотра ваших обоев</string>
+    <string name="tutorial_subtitle">Коснитесь обоев на домашнем экране двумя пальцами, чтобы временно убрать размытие</string>
+    <string name="get_more_sources">Добавить дополнительные источники</string>
+    <string name="get_more_sources_description">Полностью измените ваши обои с помощью дополнительных источников из магазина <xliff:g id="google_play">Google Play</xliff:g></string>
+    <string name="action_link_effects">Домашний экран 🔗 Экран блокировки</string>
+    <string name="toast_link_effects">Эффекты Домашнего экрана &amp; Экрана блокировки теперь связаны</string>
+    <string name="action_link_effects_off">Домашний экран &amp; Экран блокировки не связаны</string>
+    <string name="toast_link_effects_off">Эффекты Домашнего экрана &amp; Экрана блокировки больше не связаны вместе</string>
+    <string name="reset_advanced_settings_defaults">Сбросить ползунки</string>
+    <string name="play_store_not_found">Не удаётся открыть магазин <xliff:g id="google_play">Google Play</xliff:g>.</string>
+    <string name="browse_refresh">Обновить</string>
+    <string name="browse_set_wallpaper">Установить как текущие обои</string>
+    <string name="browse_set_wallpaper_with_title">\"<xliff:g id="image_name" example="IMG14227.jpg">%s</xliff:g>\" установлен в качестве текущих обоев</string>
+    <string name="missing_resources_title">Некорректная установка <xliff:g id="muzei_name">Muzei</xliff:g></string>
+    <string name="missing_resources_message">Приложение <xliff:g id="muzei_name">Muzei</xliff:g> повреждено. Для исправления, пожалуйста, удалите <xliff:g id="muzei_name">Muzei</xliff:g> и установите его заново из магазина <xliff:g id="google_play">Google Play</xliff:g>.</string>
+    <string name="missing_resources_open">Открыть магазин <xliff:g id="google_play">Google Play</xliff:g></string>
+    <string name="missing_resources_quit">Закрыть <xliff:g id="muzei_name">Muzei</xliff:g></string>
+    <string name="tasker_setting_dialog_title">Выберите действие</string>
+    <string name="tasker_action_select_provider">Выбрать <xliff:g id="source_name" example="Nice Wallpapers">%s</xliff:g></string>
+    <string name="actions_gestures">Настроить Жесты</string>
+    <string name="gestures_title">Жесты</string>
+    <string name="gestures_double_tap_title">Двойное касание</string>
+    <string name="gestures_double_tap_description">Дважды коснитесь размытых обоев на домашнем экране, чтобы выполнить выбранное вами действие.</string>
+    <string name="gestures_three_finger_tap_title">Касание тремя пальцами</string>
+    <string name="gestures_three_finger_tap_description">Коснитесь размытых обоев на домашнем экране тремя пальцами, чтобы выполнить выбранное вами действие.</string>
+    <string name="gestures_tap_action_temporary_disable">Временно отключить эффекты</string>
+    <string name="gestures_tap_action_next">Следующий рисунок</string>
+    <string name="gestures_tap_action_view_details">Просмотреть информацию о рисунке</string>
+    <string name="gestures_tap_action_none">Ничего</string>
+    <string name="actions_always_dark">Всегда Тёмная</string>
+    <string name="about_title">О <xliff:g id="muzei_name">Muzei</xliff:g></string>
+    <string name="about_body"><![CDATA[        Разработано Roman Nurik и Ian Lake, при значительном вкладе
+        <a href="http://code.muzei.co">сообщества открытого программного обеспечения</a>.
+        <i>Muzei</i> является транслитерацией русского слова
+        <a href="http://translate.google.com/#en/ru/museum"><i>музей</i></a>.<br><br>
+
+        Copyright 2013&ndash;2018 Google Inc. Все права защищены.
+        <a href="http://m.google.com/utos">Условия предоставления услуг</a>,
+        <a href="http://www.google.com/policies/privacy/">Политика конфиденциальности</a>&nbsp;<br><br>
+
+        Большое спасибо этим проектам с открытым исходным кодом:<br>
+        &bull; <b><a href="http://square.github.io/okhttp/">OkHttp</a> и <a href="http://square.github.io/picasso/">Picasso</a></b> от Square<br>
+        &bull; <b><a href="https://github.com/GLWallpaperService/GLWallpaperService">GLWallpaperService</a></b> за авторством Robert Green, Mark F. Guerra, и других
+    ]]></string>
+    <string name="about_version_template">v<xliff:g id="version_number" example="3.3.0 Beta">%1$s</xliff:g></string>
+    <string name="app_author"><xliff:g id="roman_nurik">Roman Nurik</xliff:g> и <xliff:g id="ian_lake">Ian Lake</xliff:g></string>
+    <string name="app_context_description">Живой музей для вашего домашнего экрана</string>
 </resources>

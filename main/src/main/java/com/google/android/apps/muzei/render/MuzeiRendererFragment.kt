@@ -27,34 +27,54 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
-import androidx.core.os.bundleOf
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.fragment.app.Fragment
-import coil.bitmap.BitmapPool
-import coil.load
-import coil.size.Size
-import coil.transform.Transformation
+import androidx.fragment.compose.AndroidFragment
+import androidx.savedstate.savedState
+import coil3.load
+import coil3.request.lifecycle
+import coil3.request.transformations
+import coil3.size.Size
+import coil3.transform.Transformation
 import com.google.android.apps.muzei.settings.EffectsLockScreenOpen
 import com.google.android.apps.muzei.util.ImageBlurrer
 import com.google.android.apps.muzei.util.blur
 import com.google.android.apps.muzei.util.collectIn
+import com.google.android.apps.muzei.util.isReducedMotionEnabled
 import com.google.android.apps.muzei.util.roundMult4
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
+private const val ARG_DEMO_MODE = "demo_mode"
+private const val ARG_DEMO_FOCUS = "demo_focus"
+
+@Composable
+fun MuzeiRendererFragment(
+    demoMode: Boolean,
+    demoFocus: Boolean,
+    modifier: Modifier = Modifier
+) {
+    AndroidFragment<MuzeiRendererFragment>(
+        modifier = modifier,
+        arguments = savedState {
+            putBoolean(ARG_DEMO_MODE, demoMode)
+            putBoolean(ARG_DEMO_FOCUS, demoFocus)
+        }
+    )
+}
+
 class MuzeiRendererFragment : Fragment(), RenderController.Callbacks, MuzeiBlurRenderer.Callbacks {
 
     companion object {
-
-        private const val ARG_DEMO_MODE = "demo_mode"
-        private const val ARG_DEMO_FOCUS = "demo_focus"
-
         private const val TRANSFORMATION_ID = "simpleDemoModeTransformation"
 
         fun createInstance(demoMode: Boolean, demoFocus: Boolean = false): MuzeiRendererFragment {
             return MuzeiRendererFragment().apply {
-                arguments = bundleOf(
-                        ARG_DEMO_MODE to demoMode,
-                        ARG_DEMO_FOCUS to demoFocus)
+                arguments = savedState {
+                    putBoolean(ARG_DEMO_MODE, demoMode)
+                    putBoolean(ARG_DEMO_FOCUS, demoFocus)
+                }
             }
         }
     }
@@ -64,25 +84,25 @@ class MuzeiRendererFragment : Fragment(), RenderController.Callbacks, MuzeiBlurR
     private var demoMode: Boolean = false
     private var demoFocus: Boolean = false
 
-    private val simpleDemoModeTransformation = object : Transformation {
+    private val simpleDemoModeTransformation = object : Transformation() {
         override suspend fun transform(
-                pool: BitmapPool,
-                input: Bitmap,
-                size: Size
+            input: Bitmap,
+            size: Size
         ) = if (!demoFocus) {
             withContext(Dispatchers.IO) {
                 input.blur(requireContext())?.apply {
                     // Dim
                     val c = Canvas(this)
                     c.drawColor(Color.argb(255 - MuzeiBlurRenderer.DEFAULT_MAX_DIM,
-                            0, 0, 0))
+                        0, 0, 0))
                 }
             } ?: input
         } else {
             input
         }
 
-        override fun key() = TRANSFORMATION_ID
+        override val cacheKey: String
+            get() = TRANSFORMATION_ID
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -98,7 +118,7 @@ class MuzeiRendererFragment : Fragment(), RenderController.Callbacks, MuzeiBlurR
     ): View? {
         val activityManager = requireContext().getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
 
-        if (demoMode && activityManager.isLowRamDevice) {
+        if (demoMode && (activityManager.isLowRamDevice || requireContext().isReducedMotionEnabled)) {
             val dm = resources.displayMetrics
             var targetWidth = dm.widthPixels
             var targetHeight = dm.heightPixels

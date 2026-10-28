@@ -15,13 +15,17 @@
   limitations under the License.
   -->
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
-    <string name="gallery_add_fab">新增相片</string>
+    <string name="gallery_add_fab">新增相片或資料夾</string>
     <string name="gallery_add_photos">新增相片</string>
     <string name="gallery_add_folder">新增資料夾</string>
     <string name="gallery_internal_storage_message">空無一物？試著在溢位選單中啟用內部儲存空間</string>
     <string name="gallery_add_photos_error">您的裝置不支援新增圖片。\n請聯絡您的裝置製造商。</string>
     <string name="gallery_add_folder_error">您的裝置不支援新增資料夾。\n請聯絡您的裝置製造商。</string>
     <string name="gallery_action_clear_photos">移除所有相片</string>
+    <string name="gallery_action_clear_photos_confirm_title">移除所有相片？</string>
+    <string name="gallery_action_clear_photos_confirm_text">這將移除所有相片和資料夾。</string>
+    <string name="gallery_action_clear_photos_confirm_positive_button">確認</string>
+    <string name="gallery_action_clear_photos_confirm_negative_button">取消</string>
     <string name="gallery_action_import_photos">匯入相片…</string>
     <string name="gallery_action_import_photos_from">從「<xliff:g id="app_name" example="Gallery">%s</xliff:g>」匯入相片</string>
     <string name="gallery_import_dialog_title">要從何處匯入？</string>
@@ -32,6 +36,7 @@
         <item quantity="other"><xliff:g id="quantity" example="2">%1$d</xliff:g> 張相片</item>
     </plurals>
     <string name="gallery_empty">自訂隨機相片</string>
+    <string name="gallery_reselect_selected_photos">重新選取已選取的相片</string>
     <string name="gallery_empty_subtitle">選取特定相片</string>
     <string name="gallery_from_gallery">從相簿</string>
     <string name="gallery_touch_to_view">輕觸以檢視</string>

@@ -32,7 +32,11 @@ buildscript {
 }
 
 plugins {
-    id "com.google.devtools.ksp" version libs.versions.ksp
+    alias(libs.plugins.dokka.html) apply false
+    alias(libs.plugins.dokka.javadoc) apply false
+    alias(libs.plugins.ksp) apply false
+    alias(libs.plugins.compose.compiler) apply false
+    alias(libs.plugins.serialization) apply false
 }
 
 allprojects {

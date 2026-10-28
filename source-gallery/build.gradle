@@ -13,10 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 apply plugin: 'com.android.library'
-apply plugin: 'kotlin-android'
+apply plugin: 'org.jetbrains.kotlin.plugin.compose'
 apply plugin: 'com.google.devtools.ksp'
+apply plugin: 'org.jetbrains.kotlin.plugin.serialization'
 
 dependencies {
     api libs.coroutines.core
@@ -24,22 +26,25 @@ dependencies {
     implementation project(':muzei-api')
     implementation project(':extensions')
     implementation libs.okhttp.core
-    implementation libs.coil
+    implementation libs.coil.compose
+    implementation libs.coil.runtime
+    implementation libs.coil.okhttp
     implementation libs.activity
+    implementation platform(libs.compose.bom)
+    implementation libs.compose.icons
+    implementation libs.compose.material3
+    implementation libs.compose.ui.tooling.preview
+    debugImplementation libs.compose.ui.tooling.runtime
     implementation libs.core
-    implementation libs.fragment
-    implementation libs.appCompat
-    implementation libs.material
-    implementation libs.recyclerView
-    implementation libs.constraintLayout
     implementation libs.exifInterface
-    implementation libs.lifecycle.common
-    implementation libs.lifecycle.livedata
-    implementation libs.room.ktx
-    implementation libs.room.paging
+    implementation libs.lifecycle.viewmodel
+    implementation libs.paging.compose
+    implementation libs.room3.runtime
+    implementation libs.room3.livedata
+    implementation libs.room3.paging
     implementation libs.workManager
-    ksp libs.room.compiler
-    implementation libs.paging
+    ksp libs.room3.compiler
+    implementation libs.paging.runtime
 }
 
 android {
@@ -47,11 +52,11 @@ android {
     compileSdk libs.versions.compileSdk.get().toInteger()
 
     buildFeatures {
-        viewBinding true
+        buildConfig true
     }
 
     defaultConfig {
-        minSdkVersion 21
+        minSdkVersion 24
         targetSdkVersion libs.versions.targetSdk.get()
 
         def galleryAuthorityValue = "com.google.android.apps.muzei.gallery"
@@ -60,8 +65,6 @@ android {
                                 galleryArtAuthority: galleryArtAuthorityValue]
         buildConfigField "String", "GALLERY_AUTHORITY", "\"${galleryAuthorityValue}\""
         buildConfigField "String", "GALLERY_ART_AUTHORITY", "\"${galleryArtAuthorityValue}\""
-
-        multiDexEnabled true
 
         ksp {
             arg("room.schemaLocation", "$projectDir/schemas")
@@ -73,8 +76,14 @@ android {
         publicDebug
     }
 
-    kotlinOptions {
-        jvmTarget = '1.8'
-        freeCompilerArgs += "-opt-in=kotlin.RequiresOptIn"
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_11)
+            freeCompilerArgs.add("-opt-in=kotlin.RequiresOptIn")
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
     }
 }

@@ -25,11 +25,11 @@ import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.database.ContentObserver
 import android.net.Uri
-import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.os.RemoteException
 import android.util.Log
+import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
@@ -48,6 +48,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import net.nurik.roman.muzei.androidclientcommon.BuildConfig
 import java.util.concurrent.Executors
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * Single threaded coroutine context used for all sync operations
@@ -64,12 +65,23 @@ internal val syncSingleThreadContext by lazy {
 class ProviderManager private constructor(private val context: Context)
     : MutableLiveData<Provider?>(), Observer<Provider?> {
 
+    /**
+     * Enum that represents the order in which new artwork is loaded
+     */
+    enum class LoadOrdering {
+        IN_ORDER,
+        NEW_IN_ORDER,
+        RANDOM,
+    }
+
     companion object {
         private const val TAG = "ProviderManager"
         private const val PREF_LOAD_FREQUENCY_SECONDS = "loadFrequencySeconds"
         private const val DEFAULT_LOAD_FREQUENCY_SECONDS = 3600L
         private const val PREF_LOAD_ON_WIFI = "loadOnWifi"
         private const val DEFAULT_LOAD_ON_WIFI = false
+        private const val PREF_LOAD_ORDERING = "loadOrdering"
+        private val DEFAULT_LOAD_ORDERING = LoadOrdering.NEW_IN_ORDER
 
         @SuppressLint("StaticFieldLeak")
         @Volatile
@@ -103,7 +115,7 @@ class ProviderManager private constructor(private val context: Context)
                     .authority(authority)
                     .build()
             return ContentProviderClientCompat.getClient(context, contentUri)?.use { client ->
-                return try {
+                try {
                     val result = client.call(ProtocolConstants.METHOD_GET_DESCRIPTION)
                     result?.getString(ProtocolConstants.KEY_DESCRIPTION, "") ?: ""
                 } catch (e: RemoteException) {
@@ -113,7 +125,6 @@ class ProviderManager private constructor(private val context: Context)
             } ?: ""
         }
     }
-
     private val packageChangeReceiver : BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent?) {
             val provider = value ?: return
@@ -136,7 +147,14 @@ class ProviderManager private constructor(private val context: Context)
             }
         }
     }
-    private val contentObserver: ContentObserver
+    private val contentObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
+        override fun onChange(selfChange: Boolean, uri: Uri?) {
+            if (BuildConfig.DEBUG) {
+                Log.d(TAG, "onChange for $uri")
+            }
+            ProviderChangedWorker.enqueueChanged(context)
+        }
+    }
     private val providerLiveData by lazy {
         MuzeiDatabase.getInstance(context).providerDao().getCurrentProviderLiveData()
     }
@@ -151,7 +169,7 @@ class ProviderManager private constructor(private val context: Context)
             // try loading the next artwork with a slight delay
             nextArtworkJob?.cancel()
             nextArtworkJob = GlobalScope.launch {
-                delay(1000)
+                delay(1000.milliseconds)
                 if (nextArtworkJob?.isCancelled == false) {
                     nextArtwork()
                 }
@@ -187,17 +205,18 @@ class ProviderManager private constructor(private val context: Context)
         get() = PreferenceManager.getDefaultSharedPreferences(context)
                 .getBoolean(PREF_LOAD_ON_WIFI, DEFAULT_LOAD_ON_WIFI)
 
-    init {
-        contentObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
-            override fun onChange(selfChange: Boolean, uri: Uri?) {
-                if (BuildConfig.DEBUG) {
-                    Log.d(TAG, "onChange for $uri")
-                }
-                ProviderChangedWorker.enqueueChanged(context)
+    var loadOrdering: LoadOrdering
+        set(newLoadOrdering) {
+            PreferenceManager.getDefaultSharedPreferences(context).edit {
+                putString(PREF_LOAD_ORDERING, newLoadOrdering.name)
             }
         }
-    }
+        get() = LoadOrdering.valueOf(checkNotNull(PreferenceManager.getDefaultSharedPreferences(context)
+            .getString(PREF_LOAD_ORDERING, DEFAULT_LOAD_ORDERING.name)) {
+            "Invalid load ordering"
+        })
 
+    @SuppressLint("WrongConstant")
     override fun onActive() {
         if (BuildConfig.DEBUG) {
             Log.d(TAG, "ProviderManager became active")
@@ -210,10 +229,13 @@ class ProviderManager private constructor(private val context: Context)
             addAction(Intent.ACTION_PACKAGE_REPLACED)
             addAction(Intent.ACTION_PACKAGE_REMOVED)
         }
-        context.registerReceiver(packageChangeReceiver, packageChangeFilter)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            ProviderChangedWorker.activeListeningStateChanged(context, true)
-        }
+        ContextCompat.registerReceiver(
+            context,
+            packageChangeReceiver,
+            packageChangeFilter,
+            ContextCompat.RECEIVER_NOT_EXPORTED
+        )
+        ProviderChangedWorker.activeListeningStateChanged(context, true)
         providerLiveData.observeForever(this)
         artworkLiveData.observeForever(artworkObserver)
         startArtworkLoad()
@@ -274,9 +296,7 @@ class ProviderManager private constructor(private val context: Context)
         context.contentResolver.unregisterContentObserver(contentObserver)
         ArtworkLoadWorker.cancelPeriodic(context)
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            ProviderChangedWorker.activeListeningStateChanged(context, false)
-        }
+        ProviderChangedWorker.activeListeningStateChanged(context, false)
         context.unregisterReceiver(packageChangeReceiver)
         if (BuildConfig.DEBUG) {
             Log.d(TAG, "ProviderManager is now inactive")
