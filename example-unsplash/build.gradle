@@ -24,6 +24,7 @@ dependencies {
     implementation libs.workManager
     implementation libs.retrofit.core
     implementation libs.retrofit.moshi
+    implementation 'com.squareup.moshi:moshi-kotlin:1.15.2'
     implementation libs.okhttp.core
     implementation 'se.akerfeldt:okhttp-signpost:1.1.0'
     //implementation "com.google.android.apps.muzei:muzei-api:+"

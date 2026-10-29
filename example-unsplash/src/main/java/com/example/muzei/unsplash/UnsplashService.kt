@@ -17,6 +17,8 @@
 package com.example.muzei.unsplash
 
 import okhttp3.OkHttpClient
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import retrofit2.Call
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
@@ -35,6 +37,12 @@ internal interface UnsplashService {
         private const val OAUTH_TOKEN_SECRET = "9d3aaf1845854918"
         private const val CONSUMER_SECRET = "27967225db7fce22"
 
+        // The response models are Kotlin data classes, which Moshi refuses to
+        // handle reflectively unless the Kotlin adapter factory is installed.
+        private val moshi: Moshi = Moshi.Builder()
+                .add(KotlinJsonAdapterFactory())
+                .build()
+
         private fun createService() : UnsplashService {
             val okHttpClient = OkHttpClient.Builder()
                     .addInterceptor { chain ->
@@ -49,7 +57,7 @@ internal interface UnsplashService {
             val retrofit = Retrofit.Builder()
                     .baseUrl("https://www.flickr.com/services/rest/")
                     .client(okHttpClient)
-                    .addConverterFactory(MoshiConverterFactory.create().asLenient())
+                    .addConverterFactory(MoshiConverterFactory.create(moshi).asLenient())
                     .build()
 
             return retrofit.create()
@@ -66,25 +74,27 @@ internal interface UnsplashService {
             val retrofit = Retrofit.Builder()
                     .baseUrl("https://www.flickr.com/services/rest/")
                     .client(okHttpClient)
-                    .addConverterFactory(MoshiConverterFactory.create().asLenient())
+                    .addConverterFactory(MoshiConverterFactory.create(moshi).asLenient())
                     .build()
 
             return retrofit.create()
         }
 
+        /** Pages requested at random; feeds with fewer pages are retried within range */
+        private const val MAX_RANDOM_PAGE = 500
+
         @Throws(IOException::class)
         internal fun popularPhotos(): List<Photo> {
             // Randomly pick from 4 sources
             val source = (0..3).random()
-            val page = (1..500).random()
 
             val service = createService()
             val oauthService = createOAuthService()
 
-            return when(source.toInt()) {
+            val request: (page: Int) -> Call<Resp> = when (source) {
                 0 -> {
                     // Source 1: My favorites
-                    service.myFavorites(page).execute()
+                    { page -> service.myFavorites(page) }
                 }
                 1 -> {
                     // Source 2: Random user from following list
@@ -94,13 +104,14 @@ internal interface UnsplashService {
                         throw IOException("No contacts found")
                     }
                     val randomUser = contacts.random().nsid
-                    service.userPublicPhotos(randomUser, page).execute()
+                    val lambda: (Int) -> Call<Resp> = { page -> service.userPublicPhotos(randomUser, page) }
+                    lambda
                 }
                 2 -> {
                     // Source 3: Today's interestingness/explore
-                    service.interestingness(page).execute()
+                    { page -> service.interestingness(page) }
                 }
-                3 -> {
+                else -> {
                     // Source 4: Random user from family contacts
                     val familyContacts = oauthService.getFamilyContacts().execute().body()?.contacts?.contact
                         ?: throw IOException("Failed to fetch family contacts")
@@ -108,10 +119,28 @@ internal interface UnsplashService {
                         throw IOException("No family contacts found")
                     }
                     val randomUser = familyContacts.random().nsid
-                    service.userPublicPhotos(randomUser, page).execute()
+                    val lambda: (Int) -> Call<Resp> = { page -> service.userPublicPhotos(randomUser, page) }
+                    lambda
                 }
-                else -> service.myFavorites(page).execute()
-            }.body()?.photos?.photo ?: throw IOException("Response was null")
+            }
+            return randomPage(request)
+        }
+
+        /**
+         * Fetch a random page. Flickr returns an empty page past the end of a
+         * feed, so when that happens and the feed reports how many pages it
+         * has, pick again within that range.
+         */
+        @Throws(IOException::class)
+        private fun randomPage(request: (page: Int) -> Call<Resp>): List<Photo> {
+            val first = request((1..MAX_RANDOM_PAGE).random()).execute().body()?.photos
+                ?: throw IOException("Response was null")
+            val pages = first.pages ?: 0
+            if (first.photo.isNotEmpty() || pages < 1) {
+                return first.photo
+            }
+            return request((1..pages).random()).execute().body()?.photos?.photo
+                ?: throw IOException("Response was null")
         }
     }
 
@@ -133,7 +162,8 @@ internal interface UnsplashService {
     data class Resp(
         val photos: Photos)
     data class Photos(
-        val photo: List<Photo>)
+        val photo: List<Photo>,
+        val pages: Int?)
     data class Photo(
             val id: String,
             val owner: String,

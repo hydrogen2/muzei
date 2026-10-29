@@ -49,10 +49,10 @@ class UnsplashExampleWorker(
     }
 
     override fun doWork(): Result {
-        // Each load draws from one feed at random, weighted so that Met
-        // ukiyo-e landscapes make up a third of the mix and the four Flickr
-        // feeds (favorites, following, explore, family) share the rest equally.
-        if ((0 until 3).random() == 0) {
+        // Each load draws from one of five feeds at random with equal weight:
+        // Met ukiyo-e landscapes, or one of the four Flickr feeds (favorites,
+        // following, explore, family), which popularPhotos() picks between.
+        if ((0 until 5).random() == 0) {
             return loadMetPrints()
         }
         return loadFlickrPhotos()

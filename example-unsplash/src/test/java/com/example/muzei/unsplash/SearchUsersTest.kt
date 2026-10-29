@@ -54,7 +54,7 @@ class SearchUsersTest {
         val okHttpClient = OkHttpClient.Builder()
             .addInterceptor { chain ->
                 var request = chain.request()
-                val url = request.url().newBuilder()
+                val url = request.url.newBuilder()
                     .addQueryParameter("api_key", CONSUMER_KEY).build()
                 request = request.newBuilder().url(url).build()
                 chain.proceed(request)
